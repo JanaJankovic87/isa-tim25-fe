@@ -21,6 +21,10 @@ export class AuthService {
       );
   }
 
+  signup(userRequest: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/signup`, userRequest);
+  }
+
   logout(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('expiresIn');

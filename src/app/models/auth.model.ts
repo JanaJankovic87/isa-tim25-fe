@@ -8,12 +8,29 @@ export interface UserTokenState {
   expiresIn: number;
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+}
+
 export interface User {
   id: number;
   username: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  address?: string;
+  firstname?: string;
+  lastname?: string;
+  address?: Address;
   password?: string;
+}
+
+export interface UserRequest {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstname: string;
+  lastname: string;
+  address?: Address;
 }

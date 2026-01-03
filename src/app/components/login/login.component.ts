@@ -17,6 +17,7 @@ export class LoginComponent {
   username = '';
   password = '';
   errorMessage = '';
+  remainingAttempts: number | null = null;
   isLoading = false;
 
   constructor(
@@ -58,12 +59,21 @@ export class LoginComponent {
     error: (error) => {
       this.isLoading = false;
       
-      if (error.status === 401) {
-        this.errorMessage = 'Incorrect username or password';
+      if (error.status === 429) {
+        this.errorMessage = error.error?.error || 'Too many failed login attempts. Please try again after 60 seconds.';
+        this.remainingAttempts = 0;
+      } else if (error.status === 401) {
+        this.errorMessage = error.error?.error || 'Wrong username or password.';
+        this.remainingAttempts = error.error?.remainingAttempts ?? null;
+      } else if (error.status === 403) {
+        this.errorMessage = error.error?.error || 'Account is not activated. Please check your email.';
+        this.remainingAttempts = error.error?.remainingAttempts ?? null;
       } else if (error.status === 0) {
         this.errorMessage = 'Unable to connect to the server';
+        this.remainingAttempts = null;
       } else {
         this.errorMessage = 'An error occurred. Please try again.';
+        this.remainingAttempts = null;
       }
       
       this.cdr.detectChanges();

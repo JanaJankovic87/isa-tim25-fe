@@ -1,0 +1,38 @@
+<div class="wrapper">
+  <div class="form-box login">
+    <h2>Login</h2>
+
+    <form (ngSubmit)="onSubmit()">
+  <div class="input-box">
+    <span class="icon">
+      <ion-icon name="mail"></ion-icon>
+    </span>
+    <input type="email" [(ngModel)]="username"  name="username" (ngModelChange)="resetError()" required placeholder=" ">
+    <label>Email</label>
+  </div>
+
+  <div class="input-box">
+    <span class="icon">
+      <ion-icon name="lock-closed"></ion-icon>
+    </span>
+    <input type="password" [(ngModel)]="password" name="password" (ngModelChange)="resetError()"  required placeholder=" ">
+    <label>Password</label>
+  </div>
+
+  <button type="submit" class="btn" [disabled]="isLoading">
+    {{ isLoading ? 'Prijavljivanje...' : 'Login' }}
+  </button>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <div class="login-register">
+    <p>Don't have an account?
+        <a [routerLink]="['/signup']" class="register-link">Register</a>
+    </p>
+  </div>
+</form>
+
+  </div>
+</div>

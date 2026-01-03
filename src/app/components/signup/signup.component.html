@@ -1,0 +1,84 @@
+<div class="wrapper">
+  <div class="form-box signup">
+    <h2>Register</h2>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="input-box" [class.has-error]="hasFieldError('username')">
+        <span class="icon">
+          <ion-icon name="person"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="username" name="username" required placeholder=" " [disabled]="isLoading">
+        <label>Username</label>
+        <div *ngIf="hasFieldError('username')" class="field-error">{{ getFieldError('username') }}</div>
+      </div>
+
+      <div class="input-box" [class.has-error]="hasFieldError('email')">
+        <span class="icon">
+          <ion-icon name="mail"></ion-icon>
+        </span>
+        <input type="email" [(ngModel)]="email" name="email" required placeholder=" " [disabled]="isLoading">
+        <label>Email</label>
+        <div *ngIf="hasFieldError('email')" class="field-error">{{ getFieldError('email') }}</div>
+      </div>
+
+      <div class="input-box" [class.has-error]="hasFieldError('firstname')">
+        <span class="icon">
+          <ion-icon name="person-outline"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="firstname" name="firstname" required placeholder=" " [disabled]="isLoading">
+        <label>First Name</label>
+        <div *ngIf="hasFieldError('firstname')" class="field-error">{{ getFieldError('firstname') }}</div>
+      </div>
+
+      <div class="input-box" [class.has-error]="hasFieldError('lastname')">
+        <span class="icon">
+          <ion-icon name="person-outline"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="lastname" name="lastname" required placeholder=" " [disabled]="isLoading">
+        <label>Last Name</label>
+        <div *ngIf="hasFieldError('lastname')" class="field-error">{{ getFieldError('lastname') }}</div>
+      </div>
+
+      <div class="input-box" [class.has-error]="hasFieldError('address')">
+        <span class="icon">
+          <ion-icon name="location"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="address" name="address" required placeholder=" " [disabled]="isLoading">
+        <label>Address</label>
+        <div *ngIf="hasFieldError('address')" class="field-error">{{ getFieldError('address') }}</div>
+      </div>
+
+      <div class="input-box" [class.has-error]="hasFieldError('password')">
+        <span class="icon">
+          <ion-icon name="lock-closed"></ion-icon>
+        </span>
+        <input type="password" [(ngModel)]="password" name="password" required placeholder=" " [disabled]="isLoading">
+        <label>Password</label>
+        <div *ngIf="hasFieldError('password')" class="field-error">{{ getFieldError('password') }}</div>
+      </div>
+
+      <div class="input-box" [class.has-error]="hasFieldError('confirmPassword')">
+        <span class="icon">
+          <ion-icon name="lock-closed"></ion-icon>
+        </span>
+        <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required placeholder=" " [disabled]="isLoading">
+        <label>Confirm Password</label>
+        <div *ngIf="hasFieldError('confirmPassword')" class="field-error">{{ getFieldError('confirmPassword') }}</div>
+      </div>
+
+      <button type="submit" class="btn" [disabled]="isLoading">
+        {{ isLoading ? 'Registering...' : 'Register' }}
+      </button>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <div class="login-register">
+        <p>Already have an account?
+          <a [routerLink]="['/login']" class="login-link">Login</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

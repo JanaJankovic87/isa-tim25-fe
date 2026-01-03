@@ -39,11 +39,19 @@
         <div *ngIf="hasFieldError('lastname')" class="field-error">{{ getFieldError('lastname') }}</div>
       </div>
 
-      <div class="input-box" [class.has-error]="hasFieldError('address')">
+      <div class="input-box address-box" [class.has-error]="!isAddressComplete() && username !== ''">
         <span class="icon">
           <ion-icon name="location"></ion-icon>
         </span>
-        <input type="text" [(ngModel)]="address" name="address" required placeholder=" " [disabled]="isLoading">
+        <input type="text" 
+               [value]="getAddressDisplay()" 
+               name="address" 
+               readonly 
+               (click)="openAddressModal()" 
+               required 
+               placeholder=" " 
+               [disabled]="isLoading"
+               class="address-input">
         <label>Address</label>
         <div *ngIf="hasFieldError('address')" class="field-error">{{ getFieldError('address') }}</div>
       </div>
@@ -80,5 +88,55 @@
         </p>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showAddressModal" (click)="closeAddressModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Enter Address Details</h3>
+      <button class="close-btn" (click)="closeAddressModal()" type="button">
+        <ion-icon name="close"></ion-icon>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="input-box">
+        <span class="icon">
+          <ion-icon name="home"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="address.street" name="street" required placeholder=" ">
+        <label>Street</label>
+      </div>
+
+      <div class="input-box">
+        <span class="icon">
+          <ion-icon name="business"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="address.city" name="city" required placeholder=" ">
+        <label>City</label>
+      </div>
+
+      <div class="input-box">
+        <span class="icon">
+          <ion-icon name="mail-outline"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="address.postalCode" name="postalCode" required placeholder=" ">
+        <label>Postal Code</label>
+      </div>
+
+      <div class="input-box">
+        <span class="icon">
+          <ion-icon name="globe"></ion-icon>
+        </span>
+        <input type="text" [(ngModel)]="address.country" name="country" required placeholder=" ">
+        <label>Country</label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeAddressModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="saveAddress()">Save Address</button>
+    </div>
   </div>
 </div>

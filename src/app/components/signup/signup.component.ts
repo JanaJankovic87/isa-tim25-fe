@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Address, UserRequest } from '../../models/auth.model';
 
 @Component({
   selector: 'app-signup',
@@ -20,7 +21,15 @@ export class SignupComponent {
   confirmPassword = '';
   firstname = '';
   lastname = '';
-  address = '';
+  
+  address: Address = {
+    street: '',
+    city: '',
+    postalCode: '',
+    country: ''
+  };
+  
+  showAddressModal = false;
   
   errorMessage = '';
   fieldErrors: { [key: string]: string } = {};
@@ -33,9 +42,39 @@ export class SignupComponent {
     private cdr: ChangeDetectorRef
   ) {}
 
+  openAddressModal(): void {
+    this.showAddressModal = true;
+  }
+
+  closeAddressModal(): void {
+    this.showAddressModal = false;
+  }
+
+  saveAddress(): void {
+    if (!this.address.street || !this.address.city || 
+        !this.address.postalCode || !this.address.country) {
+      alert('All address fields are required');
+      return;
+    }
+    this.closeAddressModal();
+  }
+
+  isAddressComplete(): boolean {
+    return this.address.street !== '' && this.address.city !== '' && 
+           this.address.postalCode !== '' && 
+           this.address.country !== '';
+  }
+
+  getAddressDisplay(): string {
+    if (this.isAddressComplete()) {
+      return `${this.address.street}, ${this.address.city}, ${this.address.postalCode}, ${this.address.country}`;
+    }
+    return 'Click to add address';
+  }
+
   onSubmit(): void {
     if (!this.username || !this.email || !this.password || !this.confirmPassword || 
-        !this.firstname || !this.lastname || !this.address) {
+        !this.firstname || !this.lastname || !this.isAddressComplete()) {
       this.errorMessage = 'All fields are required';
       this.fieldErrors = {};
       this.cdr.detectChanges();
@@ -55,7 +94,7 @@ export class SignupComponent {
     this.isLoading = true;
     this.cdr.detectChanges();
 
-    const userRequest = {
+    const userRequest: UserRequest = {
       username: this.username,
       email: this.email,
       password: this.password,

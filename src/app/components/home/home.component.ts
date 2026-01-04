@@ -147,7 +147,14 @@ export class HomeComponent implements OnInit {
 
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    const d = new Date(date);
+    let d: Date;
+    if (date instanceof Date) {
+      d = date;
+    } else if (typeof date === 'string' || typeof date === 'number') {
+      d = new Date(date);
+    } else {
+      return '';
+    }
     if (isNaN(d.getTime())) return '';
     return d.toLocaleString('sr-RS', {
       day: '2-digit',

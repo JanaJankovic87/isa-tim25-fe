@@ -2,16 +2,8 @@
   <!-- NAVBAR -->
   <nav class="navbar">
     <div class="navbar-left">
-      <button class="menu-btn">
-    
-      </button>
-      
-      <a routerLink="/" class="logo">
-       
-        <span class="logo-text">VideoApp</span>
-      </a>
+      <button class="menu-btn"></button>
     </div>
-
     <div class="navbar-center">
       <div class="search-container">
         <input type="text" placeholder="Search" class="search-input">
@@ -55,11 +47,14 @@
               My Profile
             </a>
             
-            <a routerLink="/my-videos" class="dropdown-item" (click)="closeProfileMenu()">
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
-              </svg>
-              My Videos
+            <a href="#" class="dropdown-item" (click)="closeProfileMenu(); showMyVideos()">
+                         
+                            <svg width="20" height="20" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                            </svg>
+                            My Videos
+                          
+             
             </a>
             
             <div class="dropdown-divider"></div>
@@ -106,6 +101,7 @@
         *ngFor="let video of videos" 
         class="video-card"
         (click)="viewVideo(video.id!)"
+        style="position: relative;"
       >
         <div class="thumbnail-container">
           <img 
@@ -135,6 +131,20 @@
           <div class="video-tags">
             <span *ngFor="let tag of video.tags" class="tag">#{{ tag }}</span>
           </div>
+
+          <!-- Dugme za brisanje samo za videe trenutnog korisnika -->
+          <button 
+            *ngIf="video.userId === getCurrentUserId()"
+            (click)="$event.stopPropagation(); deleteVideo(video.id!)"
+            class="delete-btn"
+            title="Delete video"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="#ffb3b3" stroke="#a00" stroke-width="1.5"/>
+              <line x1="9" y1="9" x2="15" y2="15" stroke="#a00" stroke-width="2" stroke-linecap="round"/>
+              <line x1="15" y1="9" x2="9" y2="15" stroke="#a00" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

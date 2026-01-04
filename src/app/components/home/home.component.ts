@@ -14,6 +14,19 @@ import { Video } from '../../models/video.model';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
+    deleteVideo(id: number): void {
+      if (!confirm('Are you sure you want to delete this video?')) return;
+      this.videoService.deleteVideo(id).subscribe({
+        next: () => {
+          this.videos = this.videos.filter(video => video.id !== id);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          alert('Error deleting video!');
+        }
+      });
+    }
+  showOnlyMyVideos = false;
   videos: Video[] = [];
   isLoading = true;
   videoDurations: { [id: number]: string } = {};
@@ -34,11 +47,15 @@ export class HomeComponent implements OnInit {
     this.isLoading = true;
     this.videoService.getVideos().subscribe({
       next: (data) => {
-        // Parsiraj createdAt u Date objekat
-        this.videos = data.map(video => ({
+        let videos = data.map(video => ({
           ...video,
           createdAt: video.createdAt ? new Date(video.createdAt) : undefined
         }));
+        if (this.showOnlyMyVideos) {
+          const userId = this.getCurrentUserId();
+          videos = videos.filter(video => video.userId === userId);
+        }
+        this.videos = videos;
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -48,6 +65,27 @@ export class HomeComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  getCurrentUserId(): number | null {
+    const token = this.authService.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.id || payload.sub || null;
+    } catch {
+      return null;
+    }
+  }
+
+  showMyVideos(): void {
+    this.showOnlyMyVideos = true;
+    this.loadVideos();
+  }
+
+  showAllVideos(): void {
+    this.showOnlyMyVideos = false;
+    this.loadVideos();
   }
 
   getThumbnailUrl(id: number): string {
@@ -109,17 +147,15 @@ export class HomeComponent implements OnInit {
 
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    
-    const videoDate = new Date(date);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - videoDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    return `${Math.floor(diffDays / 365)} years ago`;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('sr-RS', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
   }
 }

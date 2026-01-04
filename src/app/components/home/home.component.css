@@ -236,9 +236,41 @@
   margin: 0 auto;
 }
 
+
 .video-card {
   cursor: pointer;
   transition: transform 0.2s;
+  background: #181818;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.colored-card {
+  background: #f7f7fa;
+}
+/* Dugme za brisanje videa */
+.delete-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: #ffb3b3;
+  color: #a00;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: background 0.2s;
+}
+.delete-btn:hover {
+  background: #ffd6d6;
+  color: #c00;
 }
 
 .video-card:hover {

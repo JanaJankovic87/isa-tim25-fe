@@ -1,6 +1,11 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  {
+    path: 'my-videos',
+    loadComponent: () => import('./components/my-videos/my-videos.component')
+      .then(m => m.MyVideosComponent)
+  },
       {
         path: 'create-video',
         loadComponent: () => import('./components/create-video/create-video.component')

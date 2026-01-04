@@ -1,0 +1,193 @@
+<div class="create-video-container">
+  
+  <!-- Header -->
+  <div class="header">
+    <h1>Upload Video</h1>
+    <button class="close-btn" (click)="onCancel()">
+      <svg width="24" height="24" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+    </svg>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="videoForm" (ngSubmit)="onSubmit()" class="upload-form">
+    
+    <!-- Left Column - File Uploads -->
+    <div class="left-column">
+      
+      <!-- Thumbnail Upload -->
+      <div class="upload-section">
+        <label class="section-label">Thumbnail *</label>
+        <div class="file-upload-area">
+          <input 
+            type="file" 
+            #thumbnailInput
+            accept="image/*"
+            (change)="onThumbnailSelected($event)"
+            class="file-input"
+            id="thumbnail-input"
+          >
+          
+          <div *ngIf="!thumbnailPreview" class="upload-placeholder" (click)="thumbnailInput.click()">
+            <svg width="48" height="48" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+            </svg>
+            <p>Click to upload thumbnail</p>
+            <span>JPG, PNG, GIF</span>
+          </div>
+
+          <div *ngIf="thumbnailPreview" class="preview-container" (click)="thumbnailInput.click()">
+            <img [src]="thumbnailPreview" alt="Thumbnail preview">
+            <div class="preview-overlay">
+              <span>Change thumbnail</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Upload -->
+      <div class="upload-section">
+        <label class="section-label">Video *</label>
+        <div class="file-upload-area">
+          <input 
+            type="file" 
+            #videoInput
+            accept="video/mp4"
+            (change)="onVideoSelected($event)"
+            class="file-input"
+            id="video-input"
+          >
+          
+          <div *ngIf="!videoPreview" class="upload-placeholder" (click)="videoInput.click()">
+            <svg width="48" height="48" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+            </svg>
+            <p>Click to upload video</p>
+            <span>MP4 format, max 200MB</span>
+          </div>
+
+          <div *ngIf="videoPreview" class="preview-container video-preview">
+            <video [src]="videoPreview" controls></video>
+            <div class="video-info">
+              <span>📹 {{ videoFile?.name }}</span>
+              <span>{{ getVideoSize() }}</span>
+            </div>
+            <button type="button" class="change-btn" (click)="videoInput.click()">
+              Change video
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column - Details -->
+    <div class="right-column">
+      
+      <!-- Title -->
+      <div class="form-group">
+        <label for="title">Title *</label>
+        <input 
+          type="text" 
+          id="title" 
+          formControlName="title"
+          placeholder="Enter video title"
+          class="form-input"
+        >
+        <div class="validation-message" *ngIf="videoForm.get('title')?.touched && videoForm.get('title')?.invalid">
+          <span *ngIf="videoForm.get('title')?.errors?.['required']">Title is required</span>
+          <span *ngIf="videoForm.get('title')?.errors?.['minlength']">Title must be at least 3 characters</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Description *</label>
+        <textarea 
+          id="description" 
+          formControlName="description"
+          placeholder="Tell viewers about your video"
+          rows="6"
+          class="form-textarea"
+        ></textarea>
+        <div class="validation-message" *ngIf="videoForm.get('description')?.touched && videoForm.get('description')?.invalid">
+          <span *ngIf="videoForm.get('description')?.errors?.['required']">Description is required</span>
+          <span *ngIf="videoForm.get('description')?.errors?.['minlength']">Description must be at least 10 characters</span>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="form-group">
+        <label for="tags">Tags * (at least 1)</label>
+        <div class="tag-input-container">
+          <input 
+            type="text" 
+            [formControl]="tagInput"
+            (keyup.enter)="addTag()"
+            placeholder="Add a tag and press Enter"
+            class="form-input"
+          >
+          <button type="button" class="add-tag-btn" (click)="addTag()">
+            Add
+          </button>
+        </div>
+        
+        <div class="tags-list" *ngIf="tags.length > 0">
+          <span *ngFor="let tag of tags" class="tag">
+            #{{ tag }}
+            <button type="button" class="remove-tag-btn" (click)="removeTag(tag)">×</button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="form-group">
+        <label for="location">Location (optional)</label>
+        <input 
+          type="text" 
+          id="location" 
+          formControlName="location"
+          placeholder="e.g. Belgrade, Serbia"
+          class="form-input"
+        >
+      </div>
+
+      <!-- Progress Bar -->
+      <div *ngIf="isUploading" class="progress-container">
+        <div class="progress-info">
+          <span>Uploading...</span>
+          <span>{{ uploadProgress }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="button-group">
+        <button type="button" class="cancel-btn" (click)="onCancel()" [disabled]="isUploading">
+          Cancel
+        </button>
+        <button type="submit" class="submit-btn" [disabled]="isUploading">
+          <svg *ngIf="!isUploading" width="20" height="20" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+          </svg>
+          <div *ngIf="isUploading" class="spinner-small"></div>
+          {{ isUploading ? 'Uploading...' : 'Upload Video' }}
+        </button>
+      </div>
+
+    </div>
+
+  </form>
+
+</div>

@@ -1,0 +1,96 @@
+<div class="page">
+  
+  <div class="container">
+    
+    <div class="header">
+      <h1>Upload Video</h1>
+      <button type="button" (click)="onCancel()" class="close">×</button>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-box">{{ errorMessage }}</div>
+
+    <form [formGroup]="videoForm" (ngSubmit)="onSubmit()">
+      
+      <div class="field">
+        <label>Naslov *</label>
+        <input type="text" formControlName="title" placeholder="Unesite naslov">
+        <div *ngIf="videoForm.get('title')?.touched && videoForm.get('title')?.invalid" style="color: #ff4444; font-size: 12px; margin-top: 4px;">
+          Naslov je obavezan (minimum 3 karaktera)
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Opis *</label>
+        <textarea formControlName="description" rows="4" placeholder="Opišite video"></textarea>
+        <div *ngIf="videoForm.get('description')?.touched && videoForm.get('description')?.invalid" style="color: #ff4444; font-size: 12px; margin-top: 4px;">
+          Opis je obavezan (minimum 10 karaktera)
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tagovi *</label>
+        <div class="tag-row">
+          <input type="text" [formControl]="tagInput" (keyup.enter)="addTag()" placeholder="Dodaj tag">
+          <button type="button" (click)="addTag()" class="btn-add">Dodaj</button>
+        </div>
+        <div *ngIf="tags.length > 0" class="tags">
+          <span *ngFor="let tag of tags" class="tag">
+            #{{ tag }}
+            <button type="button" (click)="removeTag(tag)">×</button>
+          </span>
+        </div>
+        <div *ngIf="tags.length === 0 && videoForm.touched" style="color: #ff4444; font-size: 12px; margin-top: 4px;">
+          Morate dodati bar jedan tag
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Thumbnail *</label>
+        <input type="file" #thumbInput accept="image/*" (change)="onThumbnailSelected($event)" hidden>
+        <div *ngIf="!thumbnailPreview" (click)="thumbInput.click()" class="upload">
+          🖼️ Kliknite za sliku
+        </div>
+        <div *ngIf="thumbnailPreview" class="preview">
+          <img [src]="thumbnailPreview">
+          <button type="button" (click)="thumbInput.click()" class="btn-change">Promeni</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Video (MP4, max 200MB) *</label>
+        <input type="file" #vidInput accept="video/mp4" (change)="onVideoSelected($event)" hidden>
+        <div *ngIf="!videoFile" (click)="vidInput.click()" class="upload">
+          🎬 Kliknite za video
+        </div>
+        <div *ngIf="videoFile" class="file-box">
+          <span>{{ videoFile.name }} ({{ getVideoSize() }})</span>
+          <button type="button" (click)="vidInput.click()" class="btn-change">Promeni</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Lokacija (opciono)</label>
+        <input type="text" formControlName="location" placeholder="npr. Beograd">
+      </div>
+
+      <div *ngIf="isUploading" class="progress">
+        <div>Učitavanje... {{ uploadProgress }}%</div>
+        <div class="bar">
+          <div class="fill" [style.width.%]="uploadProgress"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button type="button" (click)="onCancel()" [disabled]="isUploading" class="btn-cancel">
+          Otkaži
+        </button>
+        <button type="submit" [disabled]="isUploading" class="btn-submit">
+          {{ isUploading ? '⏳ Učitavanje...' : '🎥 Objavi video' }}
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>

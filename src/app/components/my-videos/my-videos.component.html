@@ -1,0 +1,14 @@
+<div class="content">
+  <h2>My Videos</h2>
+  <div *ngIf="isLoading">Loading...</div>
+  <div *ngIf="!isLoading && videos.length === 0">No videos found.</div>
+  <div *ngIf="!isLoading && videos.length > 0" class="video-grid">
+    <div *ngFor="let video of videos" class="video-card">
+      <h3>{{ video.title }}</h3>
+      <p>{{ video.description }}</p>
+      <div class="video-tags">
+        <span *ngFor="let tag of video.tags" class="tag">#{{ tag }}</span>
+      </div>
+    </div>
+  </div>
+</div>

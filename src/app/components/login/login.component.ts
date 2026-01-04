@@ -1,7 +1,7 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { JwtAuthenticationRequest } from '../../models/auth.model';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -23,7 +23,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   resetError(): void {
@@ -55,7 +56,7 @@ export class LoginComponent {
       this.isLoading = false;
       this.errorMessage = '';
       this.cdr.detectChanges(); 
-      alert('You have successfully logged in!');
+      this.router.navigate(['/home']);
     },
     error: (error) => {
       this.isLoading = false;

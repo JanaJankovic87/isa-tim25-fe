@@ -97,6 +97,38 @@ export class VideoService {
     );
   }
 
+  
+  searchVideos(keyword: string): Observable<Video[]> {
+    return this.http.get<Video[]>(`${this.apiUrl}/search`, {
+      params: { keyword }
+    }).pipe(
+      catchError(error => {
+        console.error('Search videos error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+
+  filterByTag(tag: string): Observable<Video[]> {
+    return this.http.get<Video[]>(`${this.apiUrl}/filter`, {
+      params: { tag }
+    }).pipe(
+      catchError(error => {
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getAllTags(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/tags`).pipe(
+      catchError(error => {
+        console.error('Get all tags error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   /**
    * GET /api/videos/{id}/thumbnail - Vraća URL za thumbnail
    */

@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 import { Video } from '../../models/video.model';
+import { VideoService } from '../../services/video.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-video-detail',
@@ -26,7 +28,9 @@ export class VideoDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private videoService: VideoService,
+    private authService: AuthService
   ) {
     console.log('Constructor called');
     this.debugMessage = 'Constructor done';
@@ -95,6 +99,43 @@ export class VideoDetailComponent implements OnInit {
 
   getVideoUrl(): string {
     return `http://localhost:8082/api/videos/${this.videoId}/video`;
+  }
+
+  getCurrentUserId(): number | null {
+    const token = this.authService.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.id || payload.sub || null;
+    } catch {
+      return null;
+    }
+  }
+
+  isMyVideo(): boolean {
+    const currentUserId = this.getCurrentUserId();
+    return currentUserId !== null && this.video.userId === currentUserId;
+  }
+
+  deleteVideo(): void {
+    if (!confirm('Are you sure you want to delete this video?')) return;
+    
+    if (!this.videoId) {
+      alert('Invalid video ID');
+      return;
+    }
+
+    this.videoService.deleteVideo(Number(this.videoId)).subscribe({
+      next: () => {
+        console.log('Video deleted successfully');
+        alert('Video deleted successfully!');
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Error deleting video:', err);
+        alert('Error deleting video!');
+      }
+    });
   }
 
   goBack(): void {

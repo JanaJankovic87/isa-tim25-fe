@@ -1,5 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -9,28 +10,21 @@ import { Video } from '../../models/video.model';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-    deleteVideo(id: number): void {
-      if (!confirm('Are you sure you want to delete this video?')) return;
-      this.videoService.deleteVideo(id).subscribe({
-        next: () => {
-          this.videos = this.videos.filter(video => video.id !== id);
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          alert('Error deleting video!');
-        }
-      });
-    }
   showOnlyMyVideos = false;
   videos: Video[] = [];
   isLoading = true;
   videoDurations: { [id: number]: string } = {};
-  showProfileMenu = false; // ✅ Profile dropdown state
+  showProfileMenu = false;
+  searchQuery = '';
+  openMenuId: number | null = null;
+  
+  allTags: string[] = [];
+  selectedTag: string = 'All';
 
   constructor(
     public authService: AuthService,
@@ -40,17 +34,124 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadTags();
+    this.loadVideos();
+  }
+
+  isMyVideo(video: Video): boolean {
+    const currentUserId = this.getCurrentUserId();
+    return currentUserId !== null && video.userId === currentUserId;
+  }
+
+  loadTags(): void {
+    this.videoService.getVideos().subscribe({
+      next: (videos) => {
+        const tagSet = new Set<string>();
+        videos.forEach(video => {
+          if (video.tags && Array.isArray(video.tags)) {
+            video.tags.forEach(tag => tagSet.add(tag));
+          }
+        });
+        this.allTags = Array.from(tagSet).sort();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  extractTagsFromVideos(): void {
+    const tagSet = new Set<string>();
+    this.videos.forEach(video => {
+      if (video.tags && Array.isArray(video.tags)) {
+        video.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    this.allTags = Array.from(tagSet).sort();
+    console.log('Tagovi izvučeni iz videa:', this.allTags);
+    this.cdr.detectChanges();
+  }
+
+  filterVideosLocally(): void {
+    this.videoService.getVideos().subscribe({
+      next: (data) => {
+        let videos = data.map(video => {
+          return {
+            ...video,
+            createdAt: this.parseBackendDate(video.createdAt)
+          };
+        });
+        
+        videos = videos.filter(video => 
+          video.tags && video.tags.includes(this.selectedTag)
+        );
+        
+        videos.sort((a, b) => {
+          const dateA = a.createdAt ? a.createdAt.getTime() : 0;
+          const dateB = b.createdAt ? b.createdAt.getTime() : 0;
+          return dateB - dateA; 
+        });
+        
+        if (this.showOnlyMyVideos) {
+          const userId = this.getCurrentUserId();
+          videos = videos.filter(video => video.userId === userId);
+        }
+        
+        this.videos = videos;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onTagClick(tag: string): void {
+    this.selectedTag = tag;
+    this.searchQuery = ''; 
+    this.loadVideos();
+  }
+
+  onSearch(): void {
+    this.selectedTag = 'All'; 
     this.loadVideos();
   }
 
   loadVideos(): void {
     this.isLoading = true;
-    this.videoService.getVideos().subscribe({
+    
+    let request;
+    
+    if (this.searchQuery.trim()) {
+      request = this.videoService.searchVideos(this.searchQuery.trim());
+    } else if (this.selectedTag !== 'All') {
+      this.filterVideosLocally();
+      return;
+    } else {
+      request = this.videoService.getVideos();
+    }
+    
+    request.subscribe({
       next: (data) => {
-        let videos = data.map(video => ({
-          ...video,
-          createdAt: video.createdAt ? new Date(video.createdAt) : undefined
-        }));
+        console.log('Dobijeni videi sa backend-a:', data);
+        
+        let videos = data.map(video => {
+          return {
+            ...video,
+            createdAt: this.parseBackendDate(video.createdAt)
+          };
+        });
+        
+        console.log('Pre sortiranja:', videos.map(v => ({ title: v.title, date: v.createdAt })));
+        
+        videos.sort((a, b) => {
+          const dateA = a.createdAt ? a.createdAt.getTime() : 0;
+          const dateB = b.createdAt ? b.createdAt.getTime() : 0;
+          return dateB - dateA; 
+        });
+        
+        console.log('Posle sortiranja:', videos.map(v => ({ title: v.title, date: v.createdAt })));
+        
         if (this.showOnlyMyVideos) {
           const userId = this.getCurrentUserId();
           videos = videos.filter(video => video.userId === userId);
@@ -60,7 +161,8 @@ export class HomeComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Greška:', error);
+        console.error('Greška pri učitavanju videa:', error);
+        console.error('Detalji:', error.error);
         this.isLoading = false;
         this.cdr.detectChanges();
       }
@@ -86,6 +188,38 @@ export class HomeComponent implements OnInit {
   showAllVideos(): void {
     this.showOnlyMyVideos = false;
     this.loadVideos();
+  }
+
+  isValidDate(date: Date | undefined): boolean {
+    return date instanceof Date && !isNaN(date.getTime());
+  }
+
+  parseBackendDate(dateArray: any): Date | undefined {
+    if (!dateArray || !Array.isArray(dateArray)) {
+      return undefined;
+    }
+    const [year, month, day, hour, minute, second] = dateArray;
+    return new Date(year, month - 1, day, hour, minute, second);
+  }
+
+  toggleMenu(videoId: number): void {
+    this.openMenuId = this.openMenuId === videoId ? null : videoId;
+  }
+
+  deleteVideo(videoId: number): void {
+    if (confirm('Da li ste sigurni da želite da obrišete ovaj video?')) {
+      this.videoService.deleteVideo(videoId).subscribe({
+        next: () => {
+          this.videos = this.videos.filter(v => v.id !== videoId);
+          this.openMenuId = null;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Greška pri brisanju videa:', error);
+          alert('Došlo je do greške pri brisanju videa.');
+        }
+      });
+    }
   }
 
   getThumbnailUrl(id: number): string {
@@ -119,7 +253,7 @@ export class HomeComponent implements OnInit {
 
   onLogout(): void {
     this.authService.logout();
-    this.showProfileMenu = false; // ✅ Zatvori meni pri logout-u
+    this.showProfileMenu = false; 
     this.router.navigate(['/']);
   }
 
@@ -127,7 +261,6 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/create-video']);
   }
 
-  // ✅ PROFILE DROPDOWN METODI
   toggleProfileMenu(): void {
     this.showProfileMenu = !this.showProfileMenu;
   }
@@ -136,7 +269,6 @@ export class HomeComponent implements OnInit {
     this.showProfileMenu = false;
   }
 
-  // ✅ Zatvori meni kada se klikne bilo gde na stranici
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;

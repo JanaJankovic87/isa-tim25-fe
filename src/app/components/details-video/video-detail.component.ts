@@ -7,11 +7,12 @@ import { HttpHeaders } from '@angular/common/http';
 import { Video } from '../../models/video.model';
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
+import { CommentsComponent } from '../comments/comments.component';
 
 @Component({
   selector: 'app-video-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CommentsComponent],
   templateUrl: './video-detail.component.html',
   styleUrl: './video-detail.component.css'
 })

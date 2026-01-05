@@ -31,10 +31,28 @@ export class VideoDetailComponent implements OnInit {
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
     private videoService: VideoService,
-    private authService: AuthService
+    public authService: AuthService
   ) {
     console.log('Constructor called');
     this.debugMessage = 'Constructor done';
+  }
+
+  parseBackendDate(dateArray: any): Date | null {
+    if (!dateArray || !Array.isArray(dateArray)) return null;
+    const [year, month, day, hour, minute, second] = dateArray;
+    return new Date(year, month - 1, day, hour, minute, second);
+  }
+
+  formatDate(dateArray: any): string {
+    const date = this.parseBackendDate(dateArray);
+    if (!date) return '';
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   ngOnInit(): void {
@@ -67,6 +85,9 @@ export class VideoDetailComponent implements OnInit {
             console.log('[DEBUG] SUCCESS! Data:', data);
             this.debugMessage = '[DEBUG] Data received!';
             this.video = data;
+            
+            this.loadLikeData();
+            
             this.cdr.detectChanges();
             console.log('[DEBUG] this.video:', this.video);
           },
@@ -98,6 +119,36 @@ export class VideoDetailComponent implements OnInit {
     });
   }
 
+  loadLikeData(): void {
+    if (!this.videoId) return;
+
+    this.videoService.getLikesCount(Number(this.videoId)).subscribe({
+      next: (count) => {
+        this.video.likesCount = count;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading likes count:', err);
+        this.video.likesCount = 0;
+      }
+    });
+
+    if (this.authService.isLoggedIn()) {
+      this.videoService.getLikeStatus(Number(this.videoId)).subscribe({
+        next: (isLiked) => {
+          this.video.likedByCurrentUser = isLiked;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading like status:', err);
+          this.video.likedByCurrentUser = false;
+        }
+      });
+    } else {
+      this.video.likedByCurrentUser = false;
+    }
+  }
+
   getVideoUrl(): string {
     return `http://localhost:8082/api/videos/${this.videoId}/video`;
   }
@@ -116,6 +167,28 @@ export class VideoDetailComponent implements OnInit {
   isMyVideo(): boolean {
     const currentUserId = this.getCurrentUserId();
     return currentUserId !== null && this.video.userId === currentUserId;
+  }
+
+  toggleLike(): void {
+    if (!this.videoId) return;
+
+    const isCurrentlyLiked = this.video.likedByCurrentUser;
+    
+    const request = isCurrentlyLiked 
+      ? this.videoService.unlikeVideo(Number(this.videoId))
+      : this.videoService.likeVideo(Number(this.videoId));
+
+    request.subscribe({
+      next: (response) => {
+        console.log('Like toggled:', response);
+        // Refresh like data
+        this.loadLikeData();
+      },
+      error: (err) => {
+        console.error('Error toggling like:', err);
+        alert('Error liking video!');
+      }
+    });
   }
 
   deleteVideo(): void {

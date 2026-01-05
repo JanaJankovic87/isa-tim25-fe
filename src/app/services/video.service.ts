@@ -130,6 +130,54 @@ export class VideoService {
   }
 
   /**
+   * POST /api/videos/{id}/like - Lajkuje video (zahteva JWT token)
+   */
+  likeVideo(id: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/like`, {}, { responseType: 'text' }).pipe(
+      catchError(error => {
+        console.error('Like video error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * DELETE /api/videos/{id}/like - Uklanja lajk (zahteva JWT token)
+   */
+  unlikeVideo(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}/like`, { responseType: 'text' }).pipe(
+      catchError(error => {
+        console.error('Unlike video error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * GET /api/videos/{id}/likes/count - Broj lajkova (JAVNO)
+   */
+  getLikesCount(id: number): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/${id}/likes/count`).pipe(
+      catchError(error => {
+        console.error('Get likes count error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * GET /api/videos/{id}/likes/status - Da li je korisnik lajkovao (zahteva JWT token)
+   */
+  getLikeStatus(id: number): Observable<boolean> {
+    return this.http.get<boolean>(`${this.apiUrl}/${id}/likes/status`).pipe(
+      catchError(error => {
+        console.error('Get like status error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
    * GET /api/videos/{id}/thumbnail - Vraća URL za thumbnail
    */
   getThumbnailUrl(id: number): string {

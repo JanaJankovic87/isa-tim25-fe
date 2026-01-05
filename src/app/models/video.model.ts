@@ -8,5 +8,7 @@ export interface Video {
   videoPath?: string;
   createdAt?: Date;
   userId?: number;
+  likesCount?: number;
+  likedByCurrentUser?: boolean;
   version?: number;
 }

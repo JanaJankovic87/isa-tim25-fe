@@ -35,8 +35,23 @@
       <div class="info-box">
         <h1 class="title">{{ video.title }}</h1>
         
+        <div class="video-stats">
+          <button 
+            class="like-btn"
+            [class.liked]="video.likedByCurrentUser"
+            (click)="toggleLike()"
+            *ngIf="authService.isLoggedIn()"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" [attr.fill]="video.likedByCurrentUser ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span>{{ video.likesCount || 0 }}</span>
+          </button>
+        </div>
+        
         <div class="meta">
-         
+          <span *ngIf="video.createdAt">{{ formatDate(video.createdAt) }}</span>
+          <span *ngIf="video.location">{{ video.location }}</span>
         </div>
 
         <div class="tags" *ngIf="video.tags && video.tags.length > 0">

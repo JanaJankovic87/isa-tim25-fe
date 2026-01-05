@@ -73,19 +73,13 @@
         <input type="text" formControlName="location" placeholder="npr. Beograd">
       </div>
 
-      <div *ngIf="isUploading" class="progress">
-        <div>Učitavanje... {{ uploadProgress }}%</div>
-        <div class="bar">
-          <div class="fill" [style.width.%]="uploadProgress"></div>
-        </div>
-      </div>
-
+   
       <div class="buttons">
         <button type="button" (click)="onCancel()" [disabled]="isUploading" class="btn-cancel">
           Otkaži
         </button>
         <button type="submit" [disabled]="isUploading" class="btn-submit">
-          {{ isUploading ? '⏳ Učitavanje...' : '🎥 Objavi video' }}
+          {{ isUploading ? '⏳ Učitavanje...' : 'Objavi video' }}
         </button>
       </div>
 

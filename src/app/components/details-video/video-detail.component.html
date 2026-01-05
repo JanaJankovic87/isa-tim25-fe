@@ -8,7 +8,6 @@
       Back
     </button>
 
-    <!-- Delete dugme samo za vlasnika videa -->
     <button 
       *ngIf="isMyVideo()"
       class="delete-btn" 
@@ -23,19 +22,18 @@
 
   <div class="container">
     
-    <!-- Video Section -->
     <div class="video-section">
       
-      <!-- Video Player -->
+      
       <div class="player-box">
         <video [src]="getVideoUrl()" controls autoplay class="player"></video>
       </div>
 
-      <!-- Video Info -->
+      
       <div class="info-box">
         <h1 class="title">{{ video.title }}</h1>
         
-        <div class="video-stats">
+        <div class="video-stats" style="display: flex; gap: 12px; align-items: center;">
           <button 
             class="like-btn"
             [class.liked]="video.likedByCurrentUser"
@@ -46,6 +44,13 @@
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             <span>{{ video.likesCount || 0 }}</span>
+          </button>
+          <button class="views-btn" style="display: flex; align-items: center; background: none; border: 2px solid #e0e0e0; color: #666; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span style="margin-left: 4px;"> {{ viewCount }}</span>
           </button>
         </div>
         
@@ -64,7 +69,7 @@
         </div>
       </div>
 
-      <!-- Comments Section -->
+      
       <div class="comments-section">
         <app-comments *ngIf="videoId" [videoId]="+videoId"></app-comments>
       </div>

@@ -91,6 +91,38 @@ export class HomeComponent implements OnInit {
         
         // no per-user filtering on home page
         this.videos = videos;
+        // Učitaj broj pregleda za svaki video
+        this.videos.forEach(video => {
+          if (video.id) {
+            this.videoService.getViewCount(video.id).subscribe({
+              next: (count) => {
+                (video as any).viewCount = count;
+                this.cdr.detectChanges();
+              },
+              error: () => {
+                (video as any).viewCount = 0;
+              }
+            });
+          } else {
+            (video as any).viewCount = 0;
+          }
+        });
+        // Fetch view count for each video
+        this.videos.forEach(video => {
+          if (video.id) {
+            this.videoService.getViewCount(video.id).subscribe({
+              next: (count) => {
+                video.viewsCount = count;
+                this.cdr.detectChanges();
+              },
+              error: (err) => {
+                video.viewsCount = 0;
+              }
+            });
+          } else {
+            video.viewsCount = 0;
+          }
+        });
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -148,6 +180,22 @@ export class HomeComponent implements OnInit {
         console.log('Posle sortiranja:', videos.map(v => ({ title: v.title, date: v.createdAt })));
         
         this.videos = videos;
+        // Fetch view count for each video
+        this.videos.forEach(video => {
+          if (video.id) {
+            this.videoService.getViewCount(video.id).subscribe({
+              next: (count) => {
+                video.viewsCount = count;
+                this.cdr.detectChanges();
+              },
+              error: (err) => {
+                video.viewsCount = 0;
+              }
+            });
+          } else {
+            video.viewsCount = 0;
+          }
+        });
         this.isLoading = false;
         this.cdr.detectChanges();
       },

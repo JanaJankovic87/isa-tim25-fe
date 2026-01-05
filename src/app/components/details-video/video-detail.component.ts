@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 import { Video } from '../../models/video.model';
+import { VideoService } from '../../services/video.service';
+import { AuthService } from '../../services/auth.service';
 import { CommentsComponent } from '../comments/comments.component';
 
 @Component({
@@ -27,10 +29,30 @@ export class VideoDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private videoService: VideoService,
+    public authService: AuthService
   ) {
     console.log('Constructor called');
     this.debugMessage = 'Constructor done';
+  }
+
+  parseBackendDate(dateArray: any): Date | null {
+    if (!dateArray || !Array.isArray(dateArray)) return null;
+    const [year, month, day, hour, minute, second] = dateArray;
+    return new Date(year, month - 1, day, hour, minute, second);
+  }
+
+  formatDate(dateArray: any): string {
+    const date = this.parseBackendDate(dateArray);
+    if (!date) return '';
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   ngOnInit(): void {
@@ -63,15 +85,15 @@ export class VideoDetailComponent implements OnInit {
             console.log('[DEBUG] SUCCESS! Data:', data);
             this.debugMessage = '[DEBUG] Data received!';
             this.video = data;
+            
+            this.loadLikeData();
+            
             this.cdr.detectChanges();
-            console.log('[DEBUG] this.video:', this.video);
           },
           error: (error) => {
-            console.error('[DEBUG] ERROR:', error);
             this.debugMessage = `[DEBUG] Error: ${error.message}`;
           },
           complete: () => {
-            console.log('[DEBUG] Complete');
           }
         });
 
@@ -94,8 +116,96 @@ export class VideoDetailComponent implements OnInit {
     });
   }
 
+  loadLikeData(): void {
+    if (!this.videoId) return;
+
+    this.videoService.getLikesCount(Number(this.videoId)).subscribe({
+      next: (count) => {
+        this.video.likesCount = count;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading likes count:', err);
+        this.video.likesCount = 0;
+      }
+    });
+
+    if (this.authService.isLoggedIn()) {
+      this.videoService.getLikeStatus(Number(this.videoId)).subscribe({
+        next: (isLiked) => {
+          this.video.likedByCurrentUser = isLiked;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading like status:', err);
+          this.video.likedByCurrentUser = false;
+        }
+      });
+    } else {
+      this.video.likedByCurrentUser = false;
+    }
+  }
+
   getVideoUrl(): string {
     return `http://localhost:8082/api/videos/${this.videoId}/video`;
+  }
+
+  getCurrentUserId(): number | null {
+    const token = this.authService.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.id || payload.sub || null;
+    } catch {
+      return null;
+    }
+  }
+
+  isMyVideo(): boolean {
+    const currentUserId = this.getCurrentUserId();
+    return currentUserId !== null && this.video.userId === currentUserId;
+  }
+
+  toggleLike(): void {
+    if (!this.videoId) return;
+
+    const isCurrentlyLiked = this.video.likedByCurrentUser;
+    
+    const request = isCurrentlyLiked 
+      ? this.videoService.unlikeVideo(Number(this.videoId))
+      : this.videoService.likeVideo(Number(this.videoId));
+
+    request.subscribe({
+      next: (response) => {
+        console.log('Like toggled:', response);
+        this.loadLikeData();
+      },
+      error: (err) => {
+        console.error('Error toggling like:', err);
+        alert('Error liking video!');
+      }
+    });
+  }
+
+  deleteVideo(): void {
+    if (!confirm('Are you sure you want to delete this video?')) return;
+    
+    if (!this.videoId) {
+      alert('Invalid video ID');
+      return;
+    }
+
+    this.videoService.deleteVideo(Number(this.videoId)).subscribe({
+      next: () => {
+        console.log('Video deleted successfully');
+        alert('Video deleted successfully!');
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Error deleting video:', err);
+        alert('Error deleting video!');
+      }
+    });
   }
 
   goBack(): void {

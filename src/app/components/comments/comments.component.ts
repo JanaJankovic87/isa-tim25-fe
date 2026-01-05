@@ -114,7 +114,16 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
           this.remainingComments = data.remainingComments;
         },
         error: (error) => {
-          console.error('Error loading remaining comments:', error);
+          if (error.status === 401) {
+            console.log('Not authenticated for remaining comments check');
+            if (!this.authService.isLoggedIn()) {
+              if (this.rateLimitSubscription) {
+                this.rateLimitSubscription.unsubscribe();
+              }
+            }
+          } else {
+            console.error('Error loading remaining comments:', error);
+          }
         }
       });
   }

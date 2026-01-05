@@ -3,8 +3,15 @@ import { HttpInterceptorFn } from '@angular/common/http';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('accessToken');
   
-  // Dodaj token samo za zahteve koji zahtevaju autentifikaciju (POST, PUT, DELETE)
-  if (token && (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE')) {
+  const requiresAuth = 
+    req.method === 'POST' || 
+    req.method === 'PUT' || 
+    req.method === 'DELETE' ||
+    req.url.includes('/comments/remaining') ||
+    req.url.includes('/likes/status') ||
+    req.url.includes('/my-videos');
+  
+  if (token && requiresAuth) {
     const cloned = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
@@ -13,6 +20,5 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(cloned);
   }
   
-  // GET zahtevi ne trebaju token (javni pristup)
   return next(req);
 };

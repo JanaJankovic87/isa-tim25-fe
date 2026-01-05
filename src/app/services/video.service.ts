@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpEventType } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Video } from '../models/video.model';
@@ -92,6 +92,93 @@ export class VideoService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       catchError(error => {
         console.error('Delete video error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  
+  searchVideos(keyword: string): Observable<Video[]> {
+    return this.http.get<Video[]>(`${this.apiUrl}/search`, {
+      params: { keyword }
+    }).pipe(
+      catchError(error => {
+        console.error('Search videos error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+
+  filterByTag(tag: string): Observable<Video[]> {
+    return this.http.get<Video[]>(`${this.apiUrl}/filter`, {
+      params: { tag }
+    }).pipe(
+      catchError(error => {
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getAllTags(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/tags`).pipe(
+      catchError(error => {
+        console.error('Get all tags error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+
+  likeVideo(id: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/like`, {}, { responseType: 'text' }).pipe(
+      catchError(error => {
+        console.error('Like video error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  
+  unlikeVideo(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}/like`, { responseType: 'text' }).pipe(
+      catchError(error => {
+        console.error('Unlike video error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  
+  getLikesCount(id: number): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/${id}/likes/count`).pipe(
+      catchError(error => {
+        console.error('Get likes count error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  
+  getLikeStatus(id: number): Observable<boolean> {
+    return this.http.get<boolean>(`${this.apiUrl}/${id}/likes/status`).pipe(
+      catchError(error => {
+        console.error('Get like status error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * GET /api/videos/my-videos - Dobija videe trenutno ulogovanog korisnika
+   */
+  getMyVideos(): Observable<Video[]> {
+    const token = localStorage.getItem('accessToken');
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    // Send explicit Authorization header as some GET endpoints require it
+    return this.http.get<Video[]>(`${this.apiUrl}/my-videos`, headers ? { headers } : {}).pipe(
+      catchError(error => {
+        console.error('Get my videos error:', error);
         return throwError(() => error);
       })
     );

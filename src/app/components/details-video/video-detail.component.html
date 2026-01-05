@@ -9,7 +9,7 @@
 
   <div class="container">
     
-    <!-- Left Side - Video (70%) -->
+    <!-- Video Section -->
     <div class="video-section">
       
       <!-- Video Player -->
@@ -35,22 +35,11 @@
         </div>
       </div>
 
-    </div>
+      <!-- Comments Section -->
+      <div class="comments-section">
+        <app-comments *ngIf="videoId" [videoId]="+videoId"></app-comments>
+      </div>
 
-    <!-- Right Side - Comments (30%) -->
-    <div class="comments-section">
-      <div class="comments-header">
-        <h3>Comments</h3>
-        <span class="count">0</span>
-      </div>
-      
-      <div class="placeholder">
-        <svg width="64" height="64" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-        <p>Comments section</p>
-        <span>To be implemented...</span>
-      </div>
     </div>
 
   </div>

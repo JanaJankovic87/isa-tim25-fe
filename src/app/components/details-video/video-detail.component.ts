@@ -5,11 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 import { Video } from '../../models/video.model';
+import { CommentsComponent } from '../comments/comments.component';
 
 @Component({
   selector: 'app-video-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CommentsComponent],
   templateUrl: './video-detail.component.html',
   styleUrl: './video-detail.component.css'
 })

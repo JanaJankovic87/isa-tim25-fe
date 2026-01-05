@@ -17,6 +17,10 @@ export class AuthService {
         tap(response => {
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('expiresIn', response.expiresIn.toString());
+          // Store username for later use
+          if (credentials.username) {
+            localStorage.setItem('username', credentials.username);
+          }
         })
       );
   }
@@ -28,6 +32,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('expiresIn');
+    localStorage.removeItem('username');
   }
 
   getToken(): string | null {
@@ -36,5 +41,13 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this.getToken() !== null;
+  }
+
+  getCurrentUser(): { username: string } | null {
+    const username = localStorage.getItem('username');
+    if (username) {
+      return { username };
+    }
+    return null;
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpEventType } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Video } from '../models/video.model';
@@ -129,9 +129,7 @@ export class VideoService {
     );
   }
 
-  /**
-   * POST /api/videos/{id}/like - Lajkuje video (zahteva JWT token)
-   */
+
   likeVideo(id: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/${id}/like`, {}, { responseType: 'text' }).pipe(
       catchError(error => {
@@ -141,9 +139,7 @@ export class VideoService {
     );
   }
 
-  /**
-   * DELETE /api/videos/{id}/like - Uklanja lajk (zahteva JWT token)
-   */
+  
   unlikeVideo(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}/like`, { responseType: 'text' }).pipe(
       catchError(error => {
@@ -153,9 +149,7 @@ export class VideoService {
     );
   }
 
-  /**
-   * GET /api/videos/{id}/likes/count - Broj lajkova (JAVNO)
-   */
+  
   getLikesCount(id: number): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/${id}/likes/count`).pipe(
       catchError(error => {
@@ -165,13 +159,26 @@ export class VideoService {
     );
   }
 
-  /**
-   * GET /api/videos/{id}/likes/status - Da li je korisnik lajkovao (zahteva JWT token)
-   */
+  
   getLikeStatus(id: number): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/${id}/likes/status`).pipe(
       catchError(error => {
         console.error('Get like status error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * GET /api/videos/my-videos - Dobija videe trenutno ulogovanog korisnika
+   */
+  getMyVideos(): Observable<Video[]> {
+    const token = localStorage.getItem('accessToken');
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    // Send explicit Authorization header as some GET endpoints require it
+    return this.http.get<Video[]>(`${this.apiUrl}/my-videos`, headers ? { headers } : {}).pipe(
+      catchError(error => {
+        console.error('Get my videos error:', error);
         return throwError(() => error);
       })
     );

@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { VideoService } from '../../services/video.service';
 import { Video } from '../../models/video.model';
@@ -15,7 +15,6 @@ import { Video } from '../../models/video.model';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-  showOnlyMyVideos = false;
   videos: Video[] = [];
   isLoading = true;
   videoDurations: { [id: number]: string } = {};
@@ -90,11 +89,7 @@ export class HomeComponent implements OnInit {
           return dateB - dateA; 
         });
         
-        if (this.showOnlyMyVideos) {
-          const userId = this.getCurrentUserId();
-          videos = videos.filter(video => video.userId === userId);
-        }
-        
+        // no per-user filtering on home page
         this.videos = videos;
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -152,10 +147,6 @@ export class HomeComponent implements OnInit {
         
         console.log('Posle sortiranja:', videos.map(v => ({ title: v.title, date: v.createdAt })));
         
-        if (this.showOnlyMyVideos) {
-          const userId = this.getCurrentUserId();
-          videos = videos.filter(video => video.userId === userId);
-        }
         this.videos = videos;
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -180,15 +171,7 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  showMyVideos(): void {
-    this.showOnlyMyVideos = true;
-    this.loadVideos();
-  }
-
-  showAllVideos(): void {
-    this.showOnlyMyVideos = false;
-    this.loadVideos();
-  }
+  // My Videos feature removed from home page
 
   isValidDate(date: Date | undefined): boolean {
     return date instanceof Date && !isNaN(date.getTime());

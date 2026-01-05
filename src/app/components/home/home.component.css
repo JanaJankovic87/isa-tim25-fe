@@ -22,8 +22,6 @@
   color: rgb(0, 0, 0);
 }
 
-
-/* ===== NAVBAR ===== */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -250,9 +248,8 @@
   background-color: rgba(255, 0, 0, 0.1);
 }
 
-/* ===== CONTENT ===== */
-.content {
-  padding: 24px;
+.content{
+  padding: 25px;
 }
 
 .loading {
@@ -531,7 +528,6 @@
   background-color: #ffebee;
 }
 
-/* ===== PROFILE DROPDOWN ===== */
 .profile-dropdown {
   position: relative;
 }

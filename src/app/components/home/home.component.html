@@ -39,34 +39,14 @@
           Add Video
         </button>
         
-        <!-- Profile Dropdown -->
-        <div class="profile-dropdown">
-          <button class="profile-btn" (click)="toggleProfileMenu()">
+         <div class="profile-dropdown">
+          <button type="button" class="profile-btn" (click)="toggleProfileMenu()">
             <svg width="24" height="24" viewBox="0 0 24 24">
               <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
           </button>
           
           <div *ngIf="showProfileMenu" class="dropdown-menu">
-            <a routerLink="/profile" class="dropdown-item" (click)="closeProfileMenu()">
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-              My Profile
-            </a>
-            
-            <a href="#" class="dropdown-item" (click)="closeProfileMenu(); showMyVideos()">
-                         
-                            <svg width="20" height="20" viewBox="0 0 24 24">
-                              <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
-                            </svg>
-                            My Videos
-                          
-             
-            </a>
-            
-            <div class="dropdown-divider"></div>
-            
             <button class="dropdown-item logout-item" (click)="onLogout()">
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>

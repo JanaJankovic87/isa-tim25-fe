@@ -89,14 +89,11 @@ export class VideoDetailComponent implements OnInit {
             this.loadLikeData();
             
             this.cdr.detectChanges();
-            console.log('[DEBUG] this.video:', this.video);
           },
           error: (error) => {
-            console.error('[DEBUG] ERROR:', error);
             this.debugMessage = `[DEBUG] Error: ${error.message}`;
           },
           complete: () => {
-            console.log('[DEBUG] Complete');
           }
         });
 
@@ -181,7 +178,6 @@ export class VideoDetailComponent implements OnInit {
     request.subscribe({
       next: (response) => {
         console.log('Like toggled:', response);
-        // Refresh like data
         this.loadLikeData();
       },
       error: (err) => {

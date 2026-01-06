@@ -32,12 +32,6 @@ export class CommentService {
     );
   }
 
-  deleteComment(videoId: number, commentId: number): Observable<void> {
-    return this.http.delete<void>(
-      `${this.apiUrl}/${videoId}/comments/${commentId}`
-    );
-  }
-
   getRemainingComments(videoId: number): Observable<RemainingCommentsResponse> {
     return this.http.get<RemainingCommentsResponse>(
       `${this.apiUrl}/${videoId}/comments/remaining`

@@ -24,7 +24,6 @@
     
     <div class="video-section">
       
-      
       <div class="player-box">
         <video [src]="getVideoUrl()" controls autoplay class="player"></video>
       </div>
@@ -33,7 +32,8 @@
       <div class="info-box">
         <h1 class="title">{{ video.title }}</h1>
         
-        <div class="video-stats" style="display: flex; gap: 12px; align-items: center;">
+        <div class="video-stats" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <!-- Like button - samo za autentifikovane -->
           <button 
             class="like-btn"
             [class.liked]="video.likedByCurrentUser"
@@ -45,7 +45,22 @@
             </svg>
             <span>{{ video.likesCount || 0 }}</span>
           </button>
-          <button class="views-btn" style="display: flex; align-items: center; background: none; border: 2px solid #e0e0e0; color: #666; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600;">
+
+          <!-- Like counter - za neautentifikovane -->
+          <button 
+            class="like-btn disabled"
+            *ngIf="!authService.isLoggedIn()"
+            (click)="showLoginRequired('like')"
+            title="You must be logged in to like videos"
+            style="cursor: not-allowed;"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span>{{ video.likesCount || 0 }}</span>
+          </button>
+
+          <button class="views-btn" style="display: flex; align-items: center; background: none; border: 2px solid #e0e0e0; color: #666; padding: 8px 16px; border-radius: 20px; cursor: default; font-size: 14px; font-weight: 600;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
@@ -57,6 +72,14 @@
         <div class="meta">
           <span *ngIf="video.createdAt">{{ formatDate(video.createdAt) }}</span>
           <span *ngIf="video.location">{{ video.location }}</span>
+        </div>
+
+        <!-- Video Author -->
+        <div class="video-author" *ngIf="videoAuthor && video.userId != null && video.userId != undefined">
+          <span class="author-label">Posted by:</span>
+          <a [routerLink]="['/users', video.userId, 'profile']" class="author-name">
+            {{ videoAuthor.firstName }} {{ videoAuthor.lastName }}
+          </a>
         </div>
 
         <div class="tags" *ngIf="video.tags && video.tags.length > 0">

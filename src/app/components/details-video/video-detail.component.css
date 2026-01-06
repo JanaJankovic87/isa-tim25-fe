@@ -1,7 +1,7 @@
 .page {
   background-color: #ffffff;
   min-height: 100vh;
-  padding: 20px;
+  padding: 30px 20px 20px 20px;
   color: #000000;
 }
 
@@ -10,6 +10,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  margin-top: -5px;
   gap: 16px;
 }
 
@@ -64,6 +65,7 @@
   flex-direction: column;
   max-width: 1400px;
   margin: 0 auto;
+  margin-top: 40px;
 }
 
 .video-section {
@@ -95,8 +97,36 @@
 .title {
   font-size: 24px;
   font-weight: 600;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   color: #000000;
+}
+
+.video-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.author-label {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.author-name {
+  color: #667eea;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.author-name:hover {
+  color: #5568d3;
+  text-decoration: underline;
 }
 
 .video-stats {
@@ -136,6 +166,17 @@
 
 .like-btn.liked svg {
   fill: #ff1493;
+}
+
+.like-btn.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.like-btn.disabled:hover {
+  border-color: #e0e0e0;
+  color: #666666;
+  transform: none;
 }
 
 .like-btn svg {

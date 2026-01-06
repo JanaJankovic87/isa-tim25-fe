@@ -24,6 +24,7 @@ export class VideoDetailComponent implements OnInit {
   };
   videoId: string | null = null;
   debugMessage = 'Starting...';
+  viewCount: number = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -85,9 +86,8 @@ export class VideoDetailComponent implements OnInit {
             console.log('[DEBUG] SUCCESS! Data:', data);
             this.debugMessage = '[DEBUG] Data received!';
             this.video = data;
-            
             this.loadLikeData();
-            
+            this.handleViews();
             this.cdr.detectChanges();
           },
           error: (error) => {
@@ -97,7 +97,6 @@ export class VideoDetailComponent implements OnInit {
           }
         });
 
-        // ✅ Test - postavi fake video posle 2 sekunde
         setTimeout(() => {
           if (!this.video || !this.video.title) {
             console.log('[DEBUG] Setting fake video after 2s');
@@ -109,9 +108,40 @@ export class VideoDetailComponent implements OnInit {
             } as any;
           }
         }, 2000);
-
       } else {
         this.debugMessage = '[DEBUG] NO VIDEO ID!';
+      }
+    });
+  }
+
+  // Poziva se nakon što se video učita
+  handleViews(): void {
+    if (!this.videoId || !this.video || !this.video.id) return;
+    // Ako nije autor videa, registruj pregled
+    if (!this.isMyVideo()) {
+      this.videoService.recordView(Number(this.videoId)).subscribe({
+        next: () => {
+          this.loadViewCount();
+        },
+        error: () => {
+          this.loadViewCount();
+        }
+      });
+    } else {
+      this.loadViewCount();
+    }
+  }
+
+  // Učitava broj pregleda
+  loadViewCount(): void {
+    if (!this.videoId) return;
+    this.videoService.getViewCount(Number(this.videoId)).subscribe({
+      next: (count) => {
+        this.viewCount = count;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.viewCount = 0;
       }
     });
   }

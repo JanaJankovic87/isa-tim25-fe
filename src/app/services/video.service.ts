@@ -3,6 +3,7 @@ import { HttpClient, HttpEventType, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Video } from '../models/video.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,11 +12,8 @@ export class VideoService {
   
   private apiUrl = 'http://localhost:8082/api/videos';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  /**
-   * POST /api/videos/ - Kreira video (zahteva JWT token)
-   */
   createVideo(
     title: string,
     description: string,
@@ -32,7 +30,6 @@ export class VideoService {
       description: description,
       tags: tags,
       location: location
-      // userId se NE šalje - backend automatski uzima ulogovanog!
     };
     
     formData.append('data', JSON.stringify(dto));
@@ -61,9 +58,6 @@ export class VideoService {
     );
   }
 
-  /**
-   * GET /api/videos/ - Dobija listu svih videa (JAVNO)
-   */
   getVideos(): Observable<Video[]> {
     return this.http.get<Video[]>(`${this.apiUrl}/`).pipe(
       catchError(error => {
@@ -73,9 +67,6 @@ export class VideoService {
     );
   }
 
-  /**
-   * GET /api/videos/{id} - Dobija jedan video (JAVNO)
-   */
   getVideo(id: number): Observable<Video> {
     return this.http.get<Video>(`${this.apiUrl}/${id}`).pipe(
       catchError(error => {
@@ -85,11 +76,10 @@ export class VideoService {
     );
   }
 
-  /**
-   * DELETE /api/videos/{id} - Briše video (zahteva JWT token)
-   */
   deleteVideo(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+    const token = this.authService.getToken();
+    const headers = token ? new HttpHeaders({ 'Authorization': `Bearer ${token}` }) : undefined;
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers }).pipe(
       catchError(error => {
         console.error('Delete video error:', error);
         return throwError(() => error);
@@ -168,10 +158,6 @@ export class VideoService {
       })
     );
   }
-
-  /**
-   * GET /api/videos/my-videos - Dobija videe trenutno ulogovanog korisnika
-   */
   getMyVideos(): Observable<Video[]> {
     const token = localStorage.getItem('accessToken');
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
@@ -183,18 +169,28 @@ export class VideoService {
       })
     );
   }
-
-  /**
-   * GET /api/videos/{id}/thumbnail - Vraća URL za thumbnail
-   */
   getThumbnailUrl(id: number): string {
     return `${this.apiUrl}/${id}/thumbnail`;
   }
-
-  /**
-   * GET /api/videos/{id}/video - Vraća URL za video stream
-   */
   getVideoUrl(id: number): string {
     return `${this.apiUrl}/${id}/video`;
   }
+  recordView(id: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/view`, {}, { responseType: 'text' }).pipe(
+      catchError(error => {
+        console.error('Record view error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+  getViewCount(id: number): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/${id}/views/count`).pipe(
+      catchError(error => {
+        console.error('Get view count error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  
 }

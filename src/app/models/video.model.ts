@@ -11,4 +11,5 @@ export interface Video {
   likesCount?: number;
   likedByCurrentUser?: boolean;
   version?: number;
+  viewsCount?: number;
 }

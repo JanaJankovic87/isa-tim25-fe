@@ -1,11 +1,13 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   
       {
         path: 'create-video',
         loadComponent: () => import('./components/create-video/create-video.component')
-          .then(m => m.CreateVideoComponent)
+          .then(m => m.CreateVideoComponent),
+        canActivate: [authGuard]
       },
     {
       path: 'home',
@@ -31,6 +33,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/details-video/video-detail.component')
       .then(m => m.VideoDetailComponent),
     runGuardsAndResolvers: 'always'
+  },
+  {
+    path: 'users/:userId/profile',
+    loadComponent: () => import('./components/user-profile/user-profile.component')
+      .then(m => m.UserProfileComponent)
   }
 
 ];

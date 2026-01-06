@@ -1,30 +1,31 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, NavigationEnd } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 import { Video } from '../../models/video.model';
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { CommentsComponent } from '../comments/comments.component';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-video-detail',
   standalone: true,
-  imports: [CommonModule, CommentsComponent],
+  imports: [CommonModule, CommentsComponent, RouterLink],
   templateUrl: './video-detail.component.html',
   styleUrl: './video-detail.component.css'
 })
-export class VideoDetailComponent implements OnInit {
+export class VideoDetailComponent implements OnInit, AfterViewInit {
   video: Video = {
     title: '',
     description: '',
     tags: []
   };
   videoId: string | null = null;
-  debugMessage = 'Starting...';
   viewCount: number = 0;
+  videoAuthor: { firstName: string, lastName: string } | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -34,8 +35,11 @@ export class VideoDetailComponent implements OnInit {
     private videoService: VideoService,
     public authService: AuthService
   ) {
-    console.log('Constructor called');
-    this.debugMessage = 'Constructor done';
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        setTimeout(() => window.scrollTo(0, 0), 0);
+      });
   }
 
   parseBackendDate(dateArray: any): Date | null {
@@ -57,61 +61,44 @@ export class VideoDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('ngOnInit called');
-    this.debugMessage = 'ngOnInit started';
+    window.scrollTo(0, 0);
 
     this.route.params.subscribe(params => {
+      window.scrollTo(0, 0);
       this.videoId = params['id'];
-      console.log('[DEBUG] Route params changed, videoId:', this.videoId);
-      this.debugMessage = `[DEBUG] Route params changed, videoId: ${this.videoId}`;
 
-      // Resetuj video na prazan objekat svaki put kad se promeni ID
       this.video = {
         title: '',
         description: '',
         tags: []
       };
-      console.log('[DEBUG] Video resetovan na prazan objekat');
 
       if (this.videoId) {
-        console.log('[DEBUG] Pokrećem HTTP zahtev...');
-        this.debugMessage = '[DEBUG] Pokrećem HTTP zahtev...';
-
         const url = `http://localhost:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
-        console.log('[DEBUG] URL zahteva:', url);
 
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
-            console.log('[DEBUG] SUCCESS! Data:', data);
-            this.debugMessage = '[DEBUG] Data received!';
             this.video = data;
             this.loadLikeData();
             this.handleViews();
+            
+            if (data.userId != null && data.userId != undefined) {
+              this.loadVideoAuthor();
+            }
+            
             this.cdr.detectChanges();
           },
           error: (error) => {
-            this.debugMessage = `[DEBUG] Error: ${error.message}`;
-          },
-          complete: () => {
+            console.error('Error loading video:', error);
           }
         });
-
-        setTimeout(() => {
-          if (!this.video || !this.video.title) {
-            console.log('[DEBUG] Setting fake video after 2s');
-            this.video = {
-              id: 999,
-              title: 'FAKE TEST VIDEO',
-              description: 'If you see this, HTTP request failed',
-              tags: ['test']
-            } as any;
-          }
-        }, 2000);
-      } else {
-        this.debugMessage = '[DEBUG] NO VIDEO ID!';
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    window.scrollTo(0, 0);
   }
 
   // Poziva se nakon što se video učita
@@ -199,6 +186,11 @@ export class VideoDetailComponent implements OnInit {
   toggleLike(): void {
     if (!this.videoId) return;
 
+    if (!this.authService.isLoggedIn()) {
+      this.showLoginRequired('like');
+      return;
+    }
+
     const isCurrentlyLiked = this.video.likedByCurrentUser;
     
     const request = isCurrentlyLiked 
@@ -240,5 +232,31 @@ export class VideoDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/']);
+  }
+
+  showLoginRequired(action: string): void {
+    const actionText = action === 'like' ? 'like videos' : 'comment on videos';
+    alert(`You must be logged in to ${actionText}. Please log in or sign up to continue.`);
+    this.router.navigate(['/login']);
+  }
+
+  loadVideoAuthor(): void {
+    if (this.video.userId == null || this.video.userId == undefined) {
+      return;
+    }
+    
+    this.http.get<any>(`http://localhost:8082/api/users/${this.video.userId}/profile`)
+      .subscribe({
+        next: (data) => {
+          this.videoAuthor = {
+            firstName: data.firstName,
+            lastName: data.lastName
+          };
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading video author:', err);
+        }
+      });
   }
 }

@@ -1,92 +1,83 @@
 <div class="comments-container">
-  
   <div class="comments-header">
-    <h3>Comments</h3>
-    <span class="count">{{ totalComments }}</span>
+    <h2>Comments ({{ totalComments }})</h2>
+    
+   
+    <div class="auth-warning" *ngIf="!isLoggedIn()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span>You must be <a routerLink="/login">logged in</a> to post comments</span>
+    </div>
   </div>
 
-  <div class="add-comment" *ngIf="isLoggedIn()">
-    <textarea
-      [(ngModel)]="newCommentText"
-      placeholder="Add a comment..."
+  <!-- Comment input - samo za autentifikovane -->
+  <div class="comment-input-section" *ngIf="isLoggedIn()">
+    <textarea 
+      [(ngModel)]="newCommentText" 
+      placeholder="Write a comment..." 
+      rows="4"
       maxlength="2000"
-      rows="3"
-      [disabled]="isPosting || remainingComments === 0"
+      [disabled]="isPosting"
     ></textarea>
     
     <div class="comment-actions">
-      <span class="char-count" [class.limit]="newCommentText.length > 1900">
-        {{ newCommentText.length }} / 2000
-      </span>
+      <span class="char-count">{{ newCommentText.length }} / 2000</span>
       <button 
-        (click)="postComment()" 
-        [disabled]="!newCommentText.trim() || isPosting || remainingComments === 0"
-        class="btn-post"
+        class="post-btn" 
+        (click)="postComment()"
+        [disabled]="isPosting || !newCommentText.trim() || remainingComments <= 0"
       >
-        {{ isPosting ? 'Posting...' : 'Post Comment' }}
+        <span *ngIf="!isPosting">Post Comment</span>
+        <span *ngIf="isPosting">Posting...</span>
       </button>
+    </div>
+    
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+    <div class="success-message" *ngIf="successMessage">
+      {{ successMessage }}
     </div>
   </div>
 
-  <div class="login-prompt" *ngIf="!isLoggedIn()">
-    <p>Please <a routerLink="/login">login</a> to leave a comment</p>
-  </div>
-
-  <div class="message success" *ngIf="successMessage">
-    {{ successMessage }}
-  </div>
-  
-  <div class="message error" *ngIf="errorMessage">
-    {{ errorMessage }}
-  </div>
-
-  <div class="comments-list" *ngIf="!isLoading || comments.length > 0">
-    
-    <div class="loading" *ngIf="isLoading && comments.length === 0">
-      <div class="spinner"></div>
+  <!-- Comments list -->
+  <div class="comments-list">
+    <div class="loading" *ngIf="isLoading">
       <p>Loading comments...</p>
     </div>
 
-    <div class="no-comments" *ngIf="comments.length === 0 && !isLoading">
-      <svg width="48" height="48" viewBox="0 0 24 24">
-        <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-      </svg>
-      <p>No comments yet</p>
-      <span>Be the first to comment!</span>
+    <div class="no-comments" *ngIf="!isLoading && comments.length === 0">
+      <p>No comments yet. Be the first to comment!</p>
     </div>
 
     <div class="comment-item" *ngFor="let comment of comments">
-      <div class="comment-header">
-        <div class="user-info">
-          <div class="avatar">{{ (comment.username || 'U').charAt(0).toUpperCase() }}</div>
-          <div class="user-details">
-            <span class="username">{{ comment.username || 'Unknown' }}</span>
-            <span class="timestamp">{{ getTimeSince(comment.createdAt) }}</span>
+      <div class="comment-avatar">
+        {{ comment.firstName?.charAt(0) || '' }}{{ comment.lastName?.charAt(0) || '' }}
+      </div>
+      
+      <div class="comment-content">
+        <div class="comment-header">
+          <div class="comment-author">
+            <a [routerLink]="['/users', comment.userId, 'profile']" class="author-link">
+              <strong>{{ comment.firstName }} {{ comment.lastName }}</strong>
+            </a>
+            <span class="comment-time">• {{ getTimeSince(comment.createdAt) }}</span>
           </div>
         </div>
         
-        <button 
-          class="btn-delete" 
-          *ngIf="canDeleteComment(comment)"
-          (click)="deleteComment(comment.id!)"
-          title="Delete comment"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-          </svg>
-        </button>
-      </div>
-      
-      <div class="comment-text">
-        {{ comment.text }}
+        <p class="comment-text">{{ comment.text }}</p>
       </div>
     </div>
   </div>
 
+  
   <div class="pagination" *ngIf="totalPages > 1">
     <button 
-      class="btn-page" 
-      (click)="previousPage()"
+      class="page-btn" 
+      (click)="previousPage()" 
       [disabled]="currentPage === 0"
     >
       Previous
@@ -94,8 +85,8 @@
     
     <div class="page-numbers">
       <button 
-        *ngFor="let page of getPageNumbers()"
-        class="btn-page-number"
+        *ngFor="let page of getPageNumbers()" 
+        class="page-number"
         [class.active]="page === currentPage"
         (click)="goToPage(page)"
       >
@@ -104,12 +95,11 @@
     </div>
     
     <button 
-      class="btn-page" 
-      (click)="nextPage()"
+      class="page-btn" 
+      (click)="nextPage()" 
       [disabled]="isLastPage"
     >
       Next
     </button>
   </div>
-
 </div>

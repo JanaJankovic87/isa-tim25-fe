@@ -178,10 +178,7 @@ export class VideoService {
   recordView(id: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/${id}/view`, {}, { responseType: 'text' }).pipe(
       catchError(error => {
-        // Suppress 401 errors - expected for unauthenticated users
-        if (error.status !== 401) {
-          console.error('Record view error:', error);
-        }
+        console.error('Record view error:', error);
         return throwError(() => error);
       })
     );

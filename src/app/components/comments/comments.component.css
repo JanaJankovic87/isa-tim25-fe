@@ -68,7 +68,7 @@
 }
 
 .comment-input-section textarea {
-  width: 100%;
+  width: 98%;
   padding: 12px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -101,7 +101,7 @@
 }
 
 .post-btn {
-  background-color: #667eea;
+  background-color: #a84476;
   color: white;
   border: none;
   padding: 10px 24px;
@@ -113,9 +113,9 @@
 }
 
 .post-btn:hover:not(:disabled) {
-  background-color: #5568d3;
+  background-color: #8b3660;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 8px rgba(139, 54, 96, 0.3);
 }
 
 .post-btn:disabled {

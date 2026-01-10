@@ -25,6 +25,8 @@ export class HomeComponent implements OnInit {
   allTags: string[] = [];
   selectedTag: string = 'All';
 
+  showSessionExpired = false;
+
   constructor(
     public authService: AuthService,
     private videoService: VideoService,
@@ -35,6 +37,20 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void {
     this.loadTags();
     this.loadVideos();
+    this.checkSessionExpired();
+  }
+  checkSessionExpired(): void {
+    const expired = localStorage.getItem('sessionExpired');
+    if (expired === 'true') {
+      this.authService.logout(); // automatski izloguj korisnika
+      this.showSessionExpired = true;
+      localStorage.removeItem('sessionExpired');
+      setTimeout(() => {
+        this.showSessionExpired = false;
+        this.cdr.detectChanges();
+      }, 4000);
+      this.cdr.detectChanges();
+    }
   }
 
   isMyVideo(video: Video): boolean {
@@ -89,9 +105,8 @@ export class HomeComponent implements OnInit {
           return dateB - dateA; 
         });
         
-        // no per-user filtering on home page
         this.videos = videos;
-        // Učitaj broj pregleda za svaki video
+       
         this.videos.forEach(video => {
           if (video.id) {
             this.videoService.getViewCount(video.id).subscribe({
@@ -180,7 +195,7 @@ export class HomeComponent implements OnInit {
         console.log('Posle sortiranja:', videos.map(v => ({ title: v.title, date: v.createdAt })));
         
         this.videos = videos;
-        // Fetch view count for each video
+        
         this.videos.forEach(video => {
           if (video.id) {
             this.videoService.getViewCount(video.id).subscribe({
@@ -218,8 +233,6 @@ export class HomeComponent implements OnInit {
       return null;
     }
   }
-
-  // My Videos feature removed from home page
 
   isValidDate(date: Date | undefined): boolean {
     return date instanceof Date && !isNaN(date.getTime());

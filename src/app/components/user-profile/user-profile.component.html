@@ -1,44 +1,69 @@
 <div class="page">
-  <div class="top-actions">
-    <button class="back-btn" (click)="goBack()">
-      <svg width="20" height="20" viewBox="0 0 24 24">
-        <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-      </svg>
-      Back
-    </button>
+  <div class="loading" *ngIf="isLoading">
+    <p>Loading profile...</p>
   </div>
 
-  <div class="profile-container">
-    <div class="profile-content" *ngIf="!isLoading && userProfile">
-    <div class="profile-header">
-      <div class="avatar">
-        {{ userProfile.firstName.charAt(0) }}{{ userProfile.lastName.charAt(0) }}
-      </div>
-      <div class="profile-info">
-        <h1>{{ userProfile.firstName }} {{ userProfile.lastName }}</h1>
-        <p class="username">&#64;{{ userProfile.username }}</p>
-      </div>
-    </div>
-
-    <div class="profile-details">
-      <div class="detail-item">
-        <label>Username:</label>
-        <span>{{ userProfile.username }}</span>
-      </div>
-      <div class="detail-item">
-        <label>Full Name:</label>
-        <span>{{ userProfile.firstName }} {{ userProfile.lastName }}</span>
-      </div>
-    </div>
+  <div class="error" *ngIf="errorMessage">
+    <p>{{ errorMessage }}</p>
   </div>
 
-  <div class="profile-container">
-    <div class="loading" *ngIf="isLoading">
-      <p>Loading profile...</p>
+  <div *ngIf="!isLoading && userProfile">
+    <div class="channel-header">
+      <div class="channel-header-content">
+        <button class="back-btn" (click)="goBack()">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+          Back
+        </button>
+        <div class="avatar">
+          {{ userProfile.firstName.charAt(0) }}{{ userProfile.lastName.charAt(0) }}
+        </div>
+        <div class="channel-info">
+          <h1 class="channel-name">{{ userProfile.firstName }} {{ userProfile.lastName }}</h1>
+          <div class="channel-meta">
+            <span class="username">@{{ userProfile.username }}</span>
+            <span class="separator">•</span>
+            <span class="video-count">{{ userVideos.length }} {{ userVideos.length === 1 ? 'video' : 'videos' }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="error" *ngIf="errorMessage">
-      <p>{{ errorMessage }}</p>
+    
+    <div class="channel-tabs">
+      <div class="tab active">Videos</div>
+    </div>
+
+    
+    <div class="channel-content">
+      <div *ngIf="loadingVideos" class="loading-videos">
+        <p>Loading videos...</p>
+      </div>
+
+      <div *ngIf="!loadingVideos && userVideos.length === 0" class="no-videos">
+        <p>No videos uploaded yet</p>
+      </div>
+
+      <div *ngIf="!loadingVideos && userVideos.length > 0" class="videos-grid">
+        <div 
+          *ngFor="let video of userVideos"
+          class="video-card"
+          (click)="viewVideo(video.id!)"
+        >
+          <img 
+            [src]="getThumbnailUrl(video.id!)" 
+            [alt]="video.title"
+            class="video-thumbnail"
+          >
+          <div class="video-info">
+            <h3 class="video-title">{{ video.title }}</h3>
+            <div class="video-meta">
+              <span>{{ getVideoDate(video) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

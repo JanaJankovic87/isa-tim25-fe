@@ -20,85 +20,120 @@
     </button>
   </div>
 
-  <div class="container">
-    
-    <div class="video-section">
-      
-      <div class="player-box">
-        <video [src]="getVideoUrl()" controls autoplay class="player"></video>
-      </div>
-
-      
-      <div class="info-box">
-        <h1 class="title">{{ video.title }}</h1>
-        
-        <div class="video-stats" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <!-- Like button - samo za autentifikovane -->
-          <button 
-            class="like-btn"
-            [class.liked]="video.likedByCurrentUser"
-            (click)="toggleLike()"
-            *ngIf="authService.isLoggedIn()"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" [attr.fill]="video.likedByCurrentUser ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <span>{{ video.likesCount || 0 }}</span>
-          </button>
-
-          <!-- Like counter - za neautentifikovane -->
-          <button 
-            class="like-btn disabled"
-            *ngIf="!authService.isLoggedIn()"
-            (click)="showLoginRequired('like')"
-            title="You must be logged in to like videos"
-            style="cursor: not-allowed;"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <span>{{ video.likesCount || 0 }}</span>
-          </button>
-
-          <button class="views-btn" style="display: flex; align-items: center; background: none; border: 2px solid #e0e0e0; color: #666; padding: 8px 16px; border-radius: 20px; cursor: default; font-size: 14px; font-weight: 600;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <span style="margin-left: 4px;"> {{ viewCount }}</span>
-          </button>
+  <div class="container-with-sidebar">
+    <!-- MAIN CONTENT - LEVO -->
+    <div class="main-content">
+      <div class="video-section">
+        <div class="player-box">
+          <video [src]="getVideoUrl()" controls autoplay class="player"></video>
         </div>
         
-        <div class="meta">
-          <span *ngIf="video.createdAt">{{ formatDate(video.createdAt) }}</span>
-          <span *ngIf="video.location">{{ video.location }}</span>
+        <div class="info-box">
+          <h1 class="title">{{ video.title }}</h1>
+          
+          <div class="video-stats" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <!-- Like button - samo za autentifikovane -->
+            <button 
+              class="like-btn"
+              [class.liked]="video.likedByCurrentUser"
+              (click)="toggleLike()"
+              *ngIf="authService.isLoggedIn()">
+              <svg width="24" height="24" viewBox="0 0 24 24" [attr.fill]="video.likedByCurrentUser ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              <span>{{ video.likesCount || 0 }}</span>
+            </button>
+            
+            <!-- Like counter - za neautentifikovane -->
+            <button 
+              class="like-btn disabled"
+              *ngIf="!authService.isLoggedIn()"
+              (click)="showLoginRequired('like')"
+              title="You must be logged in to like videos"
+              style="cursor: not-allowed;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              <span>{{ video.likesCount || 0 }}</span>
+            </button>
+            
+            <!-- Views -->
+            <button class="views-btn" style="display: flex; align-items: center; background: none; border: 2px solid #e0e0e0; color: #666; padding: 8px 16px; border-radius: 20px; cursor: default; font-size: 14px; font-weight: 600;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span style="margin-left: 4px;">{{ viewCount }}</span>
+            </button>
+          </div>
+          
+          <div class="meta">
+            <span *ngIf="video.createdAt">{{ formatDate(video.createdAt) }}</span>
+            <span *ngIf="video.location">{{ video.location }}</span>
+          </div>
+          
+          <!-- Video Author -->
+          <div class="video-author" *ngIf="videoAuthor && video.userId != null && video.userId != undefined">
+            <span class="author-label">Posted by:</span>
+            <a [routerLink]="['/users', video.userId, 'profile']" class="author-name">
+              {{ videoAuthor.firstName }} {{ videoAuthor.lastName }}
+            </a>
+          </div>
+          
+          <div class="tags" *ngIf="video.tags && video.tags.length > 0">
+            <span *ngFor="let tag of video.tags" class="tag">#{{ tag }}</span>
+          </div>
+          
+          <div class="description-section">
+            <h3>Description</h3>
+            <p>{{ video.description }}</p>
+          </div>
         </div>
-
-        <!-- Video Author -->
-        <div class="video-author" *ngIf="videoAuthor && video.userId != null && video.userId != undefined">
-          <span class="author-label">Posted by:</span>
-          <a [routerLink]="['/users', video.userId, 'profile']" class="author-name">
-            {{ videoAuthor.firstName }} {{ videoAuthor.lastName }}
-          </a>
-        </div>
-
-        <div class="tags" *ngIf="video.tags && video.tags.length > 0">
-          <span *ngFor="let tag of video.tags" class="tag">#{{ tag }}</span>
-        </div>
-
-        <div class="description-section">
-          <h3>Description</h3>
-          <p>{{ video.description }}</p>
+        
+        <div class="comments-section">
+          <app-comments *ngIf="videoId" [videoId]="+videoId"></app-comments>
         </div>
       </div>
-
-      
-      <div class="comments-section">
-        <app-comments *ngIf="videoId" [videoId]="+videoId"></app-comments>
-      </div>
-
     </div>
 
+    <!-- RIGHT SIDEBAR - RECOMMENDED VIDEOS - DESNO -->
+    <div class="right-sidebar">
+      <div class="sidebar-title">Recommended Videos</div>
+      <div *ngIf="recommendedVideos.length === 0" class="sidebar-empty">No recommendations.</div>
+      
+      <!-- HORIZONTALNI LAYOUT: SLIKA LEVO, INFO DESNO -->
+      <div *ngFor="let v of recommendedVideos" 
+           class="sidebar-video-item" 
+           (click)="v.id != null ? viewVideo(v.id) : null">
+        
+        <!-- LEVO: THUMBNAIL SA FALLBACK -->
+        <div class="sidebar-thumb">
+          <img [src]="getThumbnailUrl(v.id)"
+            [alt]="v.title"
+            (error)="$event.target.src='https://via.placeholder.com/160x120?text=No+Thumbnail'" />
+        </div>
+        
+        <!-- DESNO: INFO -->
+        <div class="sidebar-info">
+          <div class="sidebar-title-small">{{ v.title }}</div>
+          
+          
+          <!-- DATUM I VIEWS -->
+          <div class="sidebar-meta">
+            <span *ngIf="v.createdAt" class="sidebar-date">
+              {{ formatDate(v.createdAt) }}
+            </span>
+            <div class="sidebar-views">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span>{{ v.viewsCount !== undefined && v.viewsCount !== null ? v.viewsCount : 0 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>

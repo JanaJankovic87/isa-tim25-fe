@@ -1,3 +1,4 @@
+
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef } from '@angular/core';
@@ -15,9 +16,15 @@ import { filter } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, CommentsComponent, RouterLink],
   templateUrl: './video-detail.component.html',
-  styleUrl: './video-detail.component.css'
+  styleUrls: ['./video-detail.component.css']
 })
 export class VideoDetailComponent implements OnInit, AfterViewInit {
+    getThumbnailUrl(id?: number): string {
+      if (typeof id === 'number' && !isNaN(id)) {
+        return this.videoService.getThumbnailUrl(id);
+      }
+      return 'https://via.placeholder.com/160x120?text=No+Thumbnail';
+    }
   video: Video = {
     title: '',
     description: '',
@@ -26,6 +33,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   videoId: string | null = null;
   viewCount: number = 0;
   videoAuthor: { firstName: string, lastName: string } | null = null;
+  recommendedVideos: Video[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -40,6 +48,11 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
       .subscribe(() => {
         setTimeout(() => window.scrollTo(0, 0), 0);
       });
+  }
+
+  viewVideo(id: number): void {
+    if (!id) return;
+    this.router.navigate(['/video', id]);
   }
 
   parseBackendDate(dateArray: any): Date | null {
@@ -75,22 +88,51 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
 
       if (this.videoId) {
         const url = `http://localhost:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
-
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
             this.video = data;
             this.loadLikeData();
             this.handleViews();
-            
             if (data.userId != null && data.userId != undefined) {
               this.loadVideoAuthor();
             }
-            
             this.cdr.detectChanges();
           },
           error: (error) => {
             console.error('Error loading video:', error);
+          }
+        });
+        // Učitaj preporučene videe (sve osim trenutnog)
+        this.videoService.getVideos().subscribe({
+          next: (videos) => {
+            this.recommendedVideos = videos
+              .filter(v => v.id !== Number(this.videoId))
+              .map(v => ({
+                ...v,
+                viewsCount: 0,
+                thumbnailPath: v.thumbnailPath && v.thumbnailPath !== '' ? v.thumbnailPath : undefined
+              }));
+            // Fetch view count for each recommended video
+            this.recommendedVideos.forEach(v => {
+              if (v.id) {
+                this.videoService.getViewCount(v.id).subscribe({
+                  next: (count) => {
+                    v.viewsCount = count;
+                    this.cdr.detectChanges();
+                  },
+                  error: () => {
+                    v.viewsCount = 0;
+                  }
+                });
+              } else {
+                v.viewsCount = 0;
+              }
+            });
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.recommendedVideos = [];
           }
         });
       }

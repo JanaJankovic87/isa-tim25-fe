@@ -237,7 +237,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   showLoginRequired(action: string): void {
     const actionText = action === 'like' ? 'like videos' : 'comment on videos';
     alert(`You must be logged in to ${actionText}. Please log in or sign up to continue.`);
-    this.router.navigate(['/login']);
   }
 
   loadVideoAuthor(): void {

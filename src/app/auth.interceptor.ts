@@ -1,7 +1,11 @@
 import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { tap } from 'rxjs/operators';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('accessToken');
+  const router = inject(Router);
   
   const requiresAuth = 
     req.method === 'POST' || 
@@ -17,7 +21,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         Authorization: `Bearer ${token}`
       }
     });
-    return next(cloned);
+    
+    return next(cloned).pipe(
+      tap({
+        error: (error) => {
+          if (error.status === 401) {
+            localStorage.removeItem('accessToken');
+            alert('Your session has expired. Please log in again.');
+          }
+        }
+      })
+    );
   }
   
   return next(req);

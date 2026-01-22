@@ -13,3 +13,12 @@ export interface Video {
   version?: number;
   viewsCount?: number;
 }
+
+export interface TrendingVideoDTO {
+  id: number;
+  title: string;
+  thumbnailPath?: string;
+  viewsCount: number;
+  likesCount: number;
+  score: number;
+}

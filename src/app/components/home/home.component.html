@@ -83,6 +83,59 @@
 
   <div class="content">
     
+    <div *ngIf="!isLoading && trendingVideos.length > 0" class="trending-section">
+      <div class="trending-carousel">
+        <button 
+          class="carousel-arrow left" 
+          (click)="prevTrending()"
+          [disabled]="currentTrendingIndex === 0">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+        </button>
+
+        <div class="carousel-track-container">
+          <div 
+            class="carousel-track" 
+            [style.transform]="'translateX(-' + (currentTrendingIndex * 100) + '%)'">
+            <div 
+              *ngFor="let trending of trendingVideos; let i = index" 
+              class="carousel-slide"
+              (click)="trending.id ? viewTrendingVideo(trending.id) : null">
+              <img 
+                [src]="trending.id ? getThumbnailUrl(trending.id) : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Video%3C/text%3E%3C/svg%3E'" 
+                [alt]="trending.title || 'Video'"
+                loading="lazy"
+                class="trending-thumbnail"
+                (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETrending Video%3C/text%3E%3C/svg%3E'">
+              <div class="trending-overlay">
+                <div class="trending-badge">🔥 Trending Course</div>
+                <h3 class="trending-video-title">{{ trending.title || 'Untitled' }}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          class="carousel-arrow right" 
+          (click)="nextTrending()"
+          [disabled]="currentTrendingIndex >= trendingVideos.length - 1">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+          </svg>
+        </button>
+
+        <div class="carousel-indicators">
+          <button 
+            *ngFor="let trending of trendingVideos; let i = index"
+            class="indicator"
+            [class.active]="i === currentTrendingIndex"
+            (click)="goToTrendingSlide(i)">
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <div *ngIf="isLoading" class="video-grid">
       <div *ngFor="let i of [1,2,3,4,5,6,7,8]" class="video-card skeleton">
         <div class="thumbnail-skeleton"></div>
@@ -148,8 +201,9 @@
           <img 
             [src]="getThumbnailUrl(video.id!)" 
             [alt]="video.title"
+            loading="lazy"
             class="thumbnail"
-            (error)="$event.target.src='https://via.placeholder.com/320x180?text=No+Thumbnail'"
+            (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22%3E%3Crect fill=%22%23ddd%22 width=%22320%22 height=%22180%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2218%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Thumbnail%3C/text%3E%3C/svg%3E'"
           >
           <video 
             #videoPlayer

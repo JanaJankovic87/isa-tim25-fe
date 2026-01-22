@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpEventType, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { Video } from '../models/video.model';
+import { Video, TrendingVideoDTO } from '../models/video.model';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -187,6 +187,15 @@ export class VideoService {
     return this.http.get<number>(`${this.apiUrl}/${id}/views/count`).pipe(
       catchError(error => {
         console.error('Get view count error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getTrendingVideos(): Observable<TrendingVideoDTO[]> {
+    return this.http.get<TrendingVideoDTO[]>(`${this.apiUrl}/trending`).pipe(
+      catchError(error => {
+        console.error('Get trending videos error:', error);
         return throwError(() => error);
       })
     );

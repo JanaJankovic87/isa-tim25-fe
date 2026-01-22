@@ -5,7 +5,9 @@ import { ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { VideoService } from '../../services/video.service';
-import { Video, TrendingVideoDTO } from '../../models/video.model';
+import { Video } from '../../models/video.model';
+import { LocalTrendingService, TrendingResult } from '../../services/local-trending.service';
+import { TrendingVideoDTO } from '../../models/video.model';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +20,15 @@ export class HomeComponent implements OnInit {
   videos: Video[] = [];
   trendingVideos: TrendingVideoDTO[] = [];
   currentTrendingIndex = 0;
+  
+  // LOCAL TRENDING (NOVO)
+  localTrendingVideos: any[] = [];
+  currentLocalTrendingIndex = 0;
+  localTrendingLoading = false;
+  localTrendingError: string | null = null;
+  isLocationApproximated = false;
+  radiusKm = 50;
+  
   isLoading = true;
   videoDurations: { [id: number]: string } = {};
   showProfileMenu = false;
@@ -32,6 +43,7 @@ export class HomeComponent implements OnInit {
   constructor(
     public authService: AuthService,
     private videoService: VideoService,
+    private localTrendingService: LocalTrendingService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -40,12 +52,14 @@ export class HomeComponent implements OnInit {
     this.loadTags();
     this.loadVideos();
     this.loadTrendingVideos();
+    this.loadLocalTrendingVideos(); // NOVO
     this.checkSessionExpired();
   }
+
   checkSessionExpired(): void {
     const expired = localStorage.getItem('sessionExpired');
     if (expired === 'true') {
-      this.authService.logout(); // automatski izloguj korisnika
+      this.authService.logout();
       this.showSessionExpired = true;
       localStorage.removeItem('sessionExpired');
       setTimeout(() => {
@@ -125,7 +139,7 @@ export class HomeComponent implements OnInit {
             (video as any).viewCount = 0;
           }
         });
-        // Fetch view count for each video
+        
         this.videos.forEach(video => {
           if (video.id) {
             this.videoService.getViewCount(video.id).subscribe({
@@ -345,6 +359,7 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  // GLOBALNI TRENDING (drugarica)
   loadTrendingVideos(): void {
     this.videoService.getTrendingVideos().subscribe({
       next: (trending: any) => {
@@ -356,7 +371,7 @@ export class HomeComponent implements OnInit {
         
         if (Array.isArray(trending)) {
           this.trendingVideos = trending
-            .filter(item => item && item.video && item.video.id) // Backend vraća { video: {...}, trendingScore: ... }
+            .filter(item => item && item.video && item.video.id)
             .map(item => {
               const video = item.video;
               const score = item.trendingScore || 0;
@@ -414,6 +429,67 @@ export class HomeComponent implements OnInit {
   }
 
   viewTrendingVideo(id: number): void {
+    if (!id) {
+      console.error('Invalid video ID:', id);
+      return;
+    }
+    this.router.navigate(['/video', id]);
+  }
+
+  // ========================================
+  // LOCAL TRENDING (NOVO - tvoj S2 zadatak)
+  // ========================================
+  
+  loadLocalTrendingVideos(): void {
+    this.localTrendingLoading = true;
+    this.localTrendingError = null;
+
+    this.localTrendingService.getLocalTrending(this.radiusKm, 10).subscribe({
+      next: (result: TrendingResult) => {
+        console.log('=== LOCAL TRENDING RESPONSE ===', result);
+        this.localTrendingVideos = result.videos.map((video: TrendingVideoDTO) => ({
+          id: video.id,
+          title: video.title,
+          thumbnailPath: video.thumbnailPath,
+          viewsCount: video.viewsCount,
+          likesCount: video.likesCount,
+          score: video.score
+        }));
+        this.isLocationApproximated = result.isLocationApproximated;
+        this.localTrendingLoading = false;
+        console.log('Processed local trending:', this.localTrendingVideos);
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('=== LOCAL TRENDING ERROR ===', err);
+        this.localTrendingError = 'Could not load local trending';
+        this.localTrendingLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onRadiusChange(): void {
+    this.loadLocalTrendingVideos();
+  }
+
+  nextLocalTrending(): void {
+    if (this.currentLocalTrendingIndex < this.localTrendingVideos.length - 1) {
+      this.currentLocalTrendingIndex++;
+    }
+  }
+
+  prevLocalTrending(): void {
+    if (this.currentLocalTrendingIndex > 0) {
+      this.currentLocalTrendingIndex--;
+    }
+  }
+
+  goToLocalTrendingSlide(index: number): void {
+    this.currentLocalTrendingIndex = index;
+  }
+
+  viewLocalTrendingVideo(id: number): void {
     if (!id) {
       console.error('Invalid video ID:', id);
       return;

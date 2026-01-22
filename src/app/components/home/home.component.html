@@ -83,6 +83,7 @@
 
   <div class="content">
     
+    <!-- GLOBALNI TRENDING (drugarica) -->
     <div *ngIf="!isLoading && trendingVideos.length > 0" class="trending-section">
       <div class="trending-carousel">
         <button 
@@ -135,6 +136,111 @@
         </div>
       </div>
     </div>
+
+    <!-- ============================================ -->
+    <!-- LOCAL TRENDING - NOVI DEO (S2 zadatak) -->
+    <!-- ============================================ -->
+    <div class="local-trending-section" style="margin-top: 30px;">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 24px; font-weight: 600;">📍 Trending Near You</h2>
+        <div class="radius-control" style="display: flex; align-items: center; gap: 10px;">
+          <label for="radiusSelect" style="font-size: 14px; color: #666;">Radius:</label>
+          <select id="radiusSelect" [(ngModel)]="radiusKm" (change)="onRadiusChange()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+            <option [value]="10">10 km</option>
+            <option [value]="25">25 km</option>
+            <option [value]="50">50 km</option>
+            <option [value]="100">100 km</option>
+            <option [value]="200">200 km</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Location info -->
+      <div *ngIf="isLocationApproximated" style="background: #fff3cd; color: #856404; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-size: 14px;">
+        ⚠️ Location approximated from IP address
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="localTrendingLoading" style="text-align: center; padding: 40px; color: #666;">
+        <p>Loading local trending videos...</p>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="localTrendingError" style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; text-align: center;">
+        <p>{{ localTrendingError }}</p>
+        <button (click)="loadLocalTrendingVideos()" style="margin-top: 10px; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+      </div>
+
+      <!-- Local Trending Carousel -->
+      <div *ngIf="!localTrendingLoading && !localTrendingError && localTrendingVideos.length > 0" class="trending-section">
+        <div class="trending-carousel">
+          <button 
+            class="carousel-arrow left" 
+            (click)="prevLocalTrending()" 
+            [disabled]="currentLocalTrendingIndex === 0">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+          </button>
+
+          <div class="carousel-track-container">
+            <div 
+              class="carousel-track" 
+              [style.transform]="'translateX(-' + (currentLocalTrendingIndex * 100) + '%)'">
+              
+              <div 
+                *ngFor="let video of localTrendingVideos; let i = index" 
+                class="carousel-slide"
+                (click)="viewLocalTrendingVideo(video.id)">
+                
+                <img 
+                  [src]="getThumbnailUrl(video.id)" 
+                  [alt]="video.title"
+                  loading="lazy"
+                  class="trending-thumbnail"
+                  (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ELocal Video%3C/text%3E%3C/svg%3E'">
+                
+                <div class="trending-overlay">
+                  <div class="trending-badge">📍 {{ video.distanceKm | number:'1.1-1' }} km away</div>
+                  <h3 class="trending-video-title">{{ video.title }}</h3>
+                  <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 14px;">
+                    <span>👁️ {{ video.viewsCount }}</span>
+                    <span>⭐ {{ video.popularityScore | number:'1.0-0' }}</span>
+                  </div>
+                  <p style="font-size: 13px; margin-top: 8px; opacity: 0.8;">{{ video.location }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            class="carousel-arrow right" 
+            (click)="nextLocalTrending()" 
+            [disabled]="currentLocalTrendingIndex === localTrendingVideos.length - 1">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+              <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+            </svg>
+          </button>
+
+          <div class="carousel-indicators">
+            <button 
+              *ngFor="let video of localTrendingVideos; let i = index"
+              class="indicator"
+              [class.active]="i === currentLocalTrendingIndex"
+              (click)="goToLocalTrendingSlide(i)">
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- No videos message -->
+      <div *ngIf="!localTrendingLoading && !localTrendingError && localTrendingVideos.length === 0" style="text-align: center; padding: 40px; color: #666;">
+        <p>No trending videos found in your area. Try increasing the radius!</p>
+      </div>
+    </div>
+    <!-- ============================================ -->
+    <!-- KRAJ LOCAL TRENDING -->
+    <!-- ============================================ -->
     
     <div *ngIf="isLoading" class="video-grid">
       <div *ngFor="let i of [1,2,3,4,5,6,7,8]" class="video-card skeleton">

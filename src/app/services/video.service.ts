@@ -120,15 +120,28 @@ export class VideoService {
   }
 
 
-  likeVideo(id: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${id}/like`, {}, { responseType: 'text' }).pipe(
-      catchError(error => {
-        console.error('Like video error:', error);
-        return throwError(() => error);
-      })
-    );
-  }
+  
+  likeVideo(id: number, lat?: number | null, lng?: number | null): Observable<any> {
+  const url = `${this.apiUrl}/${id}/like`;
+  
+  let body: any = {};
+  
+  if (typeof lat === 'number' && typeof lng === 'number') {
+    body = {
+      latitude: lat,
+      longitude: lng,
+      locationName: 'GPS Location',
+      isApproximated: false
+    };
+  } 
 
+  return this.http.post(url, body, { responseType: 'text' as const }).pipe(
+    catchError(error => {
+      console.error('Like video error:', error);
+      return throwError(() => error);
+    })
+  );
+  }
   
   unlikeVideo(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}/like`, { responseType: 'text' }).pipe(
@@ -161,7 +174,6 @@ export class VideoService {
   getMyVideos(): Observable<Video[]> {
     const token = localStorage.getItem('accessToken');
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    // Send explicit Authorization header as some GET endpoints require it
     return this.http.get<Video[]>(`${this.apiUrl}/my-videos`, headers ? { headers } : {}).pipe(
       catchError(error => {
         console.error('Get my videos error:', error);

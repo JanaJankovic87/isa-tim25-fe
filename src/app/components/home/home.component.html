@@ -1,10 +1,16 @@
-<div class="page-container">
+<div class="left-navbar" style="position: fixed; top: 0; left: 0; width: 48px; height: 100vh; background: #888; z-index: 900; display: flex; flex-direction: column; align-items: center; padding-top: 72px; box-shadow: 2px 0 8px rgba(0,0,0,0.04);">
+  <!-- Fire icon: show trending only -->
+  <a href="#" (click)="showTrendingOnly()" [style.opacity]="activeSection === 'trending' ? '1' : '0.5'" style="margin: 16px 0; color: #fff; font-size: 20px; text-decoration: none; cursor:pointer;">🔥</a>
+  <!-- Pin icon: show local trending only (optional, can be extended) -->
+  <a href="#" (click)="showLocalTrending()" [style.opacity]="activeSection === 'local' ? '1' : '0.5'" style="margin: 16px 0; color: #fff; font-size: 20px; text-decoration: none; cursor:pointer;">📍</a>
+</div>
+<div class="page-container" style="padding-top: 72px; padding-left: 48px;">
   <div *ngIf="showSessionExpired" class="session-expired-alert">
     Session expired. Please log in again.
   
   </div>
   
-  <nav class="navbar">
+  <nav class="navbar" style="position: fixed; top: 0; left: 0; width: 98%; z-index: 1000; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
     <div class="navbar-left">
     <a routerLink="/" class="brand">
     <img src="/assets/images/logo.png" alt="Logo" class="brand-logo">
@@ -83,8 +89,8 @@
 
   <div class="content">
     
-    <!-- GLOBALNI TRENDING (drugarica) -->
-    <div *ngIf="!isLoading && trendingVideos.length > 0" class="trending-section">
+    <!-- GLOBALNI TRENDING -->
+    <div *ngIf="!isLoading && trendingVideos.length > 0 && activeSection === 'trending'" class="trending-section">
       <div class="trending-carousel">
         <button 
           class="carousel-arrow left" 
@@ -96,9 +102,9 @@
         </button>
 
         <div class="carousel-track-container">
-          <div 
-            class="carousel-track" 
-            [style.transform]="'translateX(-' + (currentTrendingIndex * 100) + '%)'">
+          <div class="carousel-track"
+            [style.transform]="'translateX(-' + (currentTrendingIndex * 100) + '%)'"><!-- fixed invalid debug output -->
+          
             <div 
               *ngFor="let trending of trendingVideos; let i = index" 
               class="carousel-slide"
@@ -140,10 +146,10 @@
     <!-- ============================================ -->
     <!-- LOCAL TRENDING - NOVI DEO (S2 zadatak) -->
     <!-- ============================================ -->
-    <div class="local-trending-section" style="margin-top: 30px;">
-      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 24px; font-weight: 600;">📍 Trending Near You</h2>
-        <div class="radius-control" style="display: flex; align-items: center; gap: 10px;">
+    <div class="local-trending-section" *ngIf="activeSection === 'local'" style="margin-top:15px;">
+      <div class="section-header" style="position: relative; display: flex; align-items: center; margin-bottom: 20px; min-height: 48px;">
+        
+        <div class="radius-control" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 10px;">
           <label for="radiusSelect" style="font-size: 14px; color: #666;">Radius:</label>
           <select id="radiusSelect" [(ngModel)]="radiusKm" (change)="onRadiusChange()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
             <option [value]="10">10 km</option>
@@ -193,20 +199,18 @@
                 class="carousel-slide"
                 (click)="viewLocalTrendingVideo(video.id)">
                 
-                <img 
-                  [src]="getThumbnailUrl(video.id)" 
-                  [alt]="video.title"
+                <img
+                  [src]="video.id ? getThumbnailUrl(video.id) : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Video%3C/text%3E%3C/svg%3E'"
+                  [alt]="video.title || 'Video'"
                   loading="lazy"
                   class="trending-thumbnail"
-                  (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ELocal Video%3C/text%3E%3C/svg%3E'">
+                  (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETrending Video%3C/text%3E%3C/svg%3E'">
                 
                 <div class="trending-overlay">
-                  <div class="trending-badge">📍 {{ video.distanceKm | number:'1.1-1' }} km away</div>
+                  <div style="margin-top: 45px;" class="trending-badge">📍 Trending Near You </div>
+                  <div class="trending-badge" *ngIf="video.distanceKm != null" style="margin-top: 6px;">📍 {{ video.distanceKm | number:'1.1-1' }} km away</div>
                   <h3 class="trending-video-title">{{ video.title }}</h3>
-                  <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 14px;">
-                    <span>👁️ {{ video.viewsCount }}</span>
-                    <span>⭐ {{ video.popularityScore | number:'1.0-0' }}</span>
-                  </div>
+                  <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 14px;"></div>
                   <p style="font-size: 13px; margin-top: 8px; opacity: 0.8;">{{ video.location }}</p>
                 </div>
               </div>

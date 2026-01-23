@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TrendingVideoDTO } from '../models/video.model';
 
+
 export interface LocationDTO {
   latitude: number;
   longitude: number;
@@ -10,12 +11,10 @@ export interface LocationDTO {
   isApproximated?: boolean;
 }
 
-// Removed duplicate TrendingVideoDTO, using the one from models/video.model.ts
-
 export interface TrendingResult {
   videos: TrendingVideoDTO[];
+  locationInfo: LocationDTO;
   responseTimeMs: number;
-  isLocationApproximated: boolean;
 }
 
 @Injectable({
@@ -48,17 +47,17 @@ export class LocalTrendingService {
             console.log('✓ User location obtained:', params);
             
             this.http.get<TrendingResult>(`${this.apiUrl}/local`, { params })
-              .subscribe(
-                result => {
+              .subscribe({
+                next: (result) => {
                   console.log('Local trending result:', result);
                   observer.next(result);
                   observer.complete();
                 },
-                error => {
+                error: (error) => {
                   console.error('Local trending error:', error);
                   observer.error(error);
                 }
-              );
+              });
           },
           // ERROR - korisnik odbio ili greška
           (error) => {
@@ -71,17 +70,22 @@ export class LocalTrendingService {
             };
             
             this.http.get<TrendingResult>(`${this.apiUrl}/local`, { params })
-              .subscribe(
-                result => {
+              .subscribe({
+                next: (result) => {
                   console.log('Local trending result (IP-based):', result);
                   observer.next(result);
                   observer.complete();
                 },
-                error => {
+                error: (error) => {
                   console.error('Local trending error:', error);
                   observer.error(error);
                 }
-              );
+              });
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 300000 // 5 minuta cache
           }
         );
       } else {
@@ -93,17 +97,17 @@ export class LocalTrendingService {
         };
         
         this.http.get<TrendingResult>(`${this.apiUrl}/local`, { params })
-          .subscribe(
-            result => {
+          .subscribe({
+            next: (result) => {
               console.log('Local trending result (no geolocation):', result);
               observer.next(result);
               observer.complete();
             },
-            error => {
+            error: (error) => {
               console.error('Local trending error:', error);
               observer.error(error);
             }
-          );
+          });
       }
     });
   }

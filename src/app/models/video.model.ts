@@ -21,4 +21,7 @@ export interface TrendingVideoDTO {
   viewsCount: number;
   likesCount: number;
   score: number;
+  distanceKm?: number;
+  popularityScore?: number;
+  location?: string;
 }

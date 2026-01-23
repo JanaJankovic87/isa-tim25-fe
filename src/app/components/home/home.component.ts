@@ -17,6 +17,8 @@ import { TrendingVideoDTO } from '../../models/video.model';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
+    // Control which section is shown: 'trending' | 'local'
+    activeSection: 'trending' | 'local' = 'trending';
   videos: Video[] = [];
   trendingVideos: TrendingVideoDTO[] = [];
   currentTrendingIndex = 0;
@@ -49,11 +51,20 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.activeSection = 'trending'; // default
     this.loadTags();
     this.loadVideos();
     this.loadTrendingVideos();
-    this.loadLocalTrendingVideos(); // NOVO
+    this.loadLocalTrendingVideos();
     this.checkSessionExpired();
+  }
+
+  showTrendingOnly(): void {
+    this.activeSection = 'trending';
+  }
+
+  showLocalTrending(): void {
+    this.activeSection = 'local';
   }
 
   checkSessionExpired(): void {
@@ -359,7 +370,7 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  // GLOBALNI TRENDING (drugarica)
+  // GLOBALNI TRENDING 
   loadTrendingVideos(): void {
     this.videoService.getTrendingVideos().subscribe({
       next: (trending: any) => {
@@ -447,15 +458,22 @@ export class HomeComponent implements OnInit {
     this.localTrendingService.getLocalTrending(this.radiusKm, 10).subscribe({
       next: (result: TrendingResult) => {
         console.log('=== LOCAL TRENDING RESPONSE ===', result);
-        this.localTrendingVideos = result.videos.map((video: TrendingVideoDTO) => ({
-          id: video.id,
-          title: video.title,
-          thumbnailPath: video.thumbnailPath,
-          viewsCount: video.viewsCount,
-          likesCount: video.likesCount,
-          score: video.score
-        }));
-        this.isLocationApproximated = result.isLocationApproximated;
+        this.localTrendingVideos = result.videos.map((item: any) => {
+          // If the backend returns a nested video object, flatten it
+          const video = item.video ? item.video : item;
+          return {
+            id: video.id,
+            title: video.title,
+            thumbnailPath: video.thumbnailPath || (video.id ? this.getThumbnailUrl(video.id) : undefined),
+            viewsCount: video.viewsCount,
+            likesCount: video.likesCount,
+            score: video.score,
+            distanceKm: video.distanceKm,
+            popularityScore: video.popularityScore,
+            location: video.location
+          };
+        });
+        this.isLocationApproximated = result.locationInfo?.isApproximated ?? false;
         this.localTrendingLoading = false;
         console.log('Processed local trending:', this.localTrendingVideos);
         this.cdr.detectChanges();

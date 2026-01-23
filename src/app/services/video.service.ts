@@ -187,14 +187,27 @@ export class VideoService {
   getVideoUrl(id: number): string {
     return `${this.apiUrl}/${id}/video`;
   }
-  recordView(id: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${id}/view`, {}, { responseType: 'text' }).pipe(
-      catchError(error => {
-        console.error('Record view error:', error);
-        return throwError(() => error);
-      })
-    );
+  recordView(id: number, lat?: number | null, lng?: number | null): Observable<any> {
+  const url = `${this.apiUrl}/${id}/view`;
+
+  let body: any = {};
+
+  if (typeof lat === 'number' && typeof lng === 'number') {
+    body = {
+      latitude: lat,
+      longitude: lng,
+      locationName: 'GPS Location',
+      isApproximated: false
+    };
   }
+
+  return this.http.post(url, body, { responseType: 'text' as const }).pipe(
+    catchError(error => {
+      console.error('Record view error:', error);
+      return throwError(() => error);
+    })
+  );
+}
   getViewCount(id: number): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/${id}/views/count`).pipe(
       catchError(error => {

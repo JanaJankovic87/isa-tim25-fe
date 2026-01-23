@@ -148,14 +148,32 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
     if (!this.videoId || !this.video || !this.video.id) return;
     // Ako nije autor videa, registruj pregled
     if (!this.isMyVideo()) {
-      this.videoService.recordView(Number(this.videoId)).subscribe({
-        next: () => {
-          this.loadViewCount();
-        },
-        error: () => {
-          this.loadViewCount();
-        }
-      });
+      const doRecord = (lat?: number, lng?: number) => {
+        this.videoService.recordView(Number(this.videoId), lat ?? null, lng ?? null).subscribe({
+          next: () => {
+            this.loadViewCount();
+          },
+          error: () => {
+            this.loadViewCount();
+          }
+        });
+      };
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            doRecord(lat, lng);
+          },
+          (error) => {
+            doRecord();
+          },
+          { enableHighAccuracy: false, timeout: 5000 }
+        );
+      } else {
+        doRecord();
+      }
     } else {
       this.loadViewCount();
     }
@@ -250,7 +268,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    // For liking: try to obtain geolocation and include as query params. If unavailable, proceed without coords.
     const doLike = (lat?: number, lng?: number) => {
       this.videoService.likeVideo(Number(this.videoId), lat ?? null, lng ?? null).subscribe({
         next: (response) => {

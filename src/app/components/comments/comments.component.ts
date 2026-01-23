@@ -138,33 +138,53 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.commentService.createComment(this.videoId, this.newCommentText)
-      .subscribe({
-        next: (response) => {
-          this.successMessage = 'Comment posted successfully!';
-          this.newCommentText = '';
-          this.remainingComments = response.remainingComments;
-          this.isPosting = false;
-          
-          this.currentPage = 0;
-          this.loadComments();
+    const doPost = (lat?: number | null, lng?: number | null) => {
+      this.commentService.createComment(this.videoId, this.newCommentText, lat ?? null, lng ?? null)
+        .subscribe({
+          next: (response) => {
+            this.successMessage = 'Comment posted successfully!';
+            this.newCommentText = '';
+            this.remainingComments = response.remainingComments;
+            this.isPosting = false;
 
-          setTimeout(() => {
-            this.successMessage = '';
-          }, 3000);
-        },
-        error: (error) => {
-          console.error('[POST COMMENT] Error:', error);
-          if (error.status === 429) {
-            this.errorMessage = 'Comment limit exceeded. You can post 60 comments per hour.';
-          } else if (error.error?.error) {
-            this.errorMessage = error.error.error;
-          } else {
-            this.errorMessage = 'Failed to post comment';
+            this.currentPage = 0;
+            this.loadComments();
+
+            setTimeout(() => {
+              this.successMessage = '';
+            }, 3000);
+          },
+          error: (error) => {
+            console.error('[POST COMMENT] Error:', error);
+            if (error.status === 429) {
+              this.errorMessage = 'Comment limit exceeded. You can post 60 comments per hour.';
+            } else if (error.error?.error) {
+              this.errorMessage = error.error.error;
+            } else {
+              this.errorMessage = 'Failed to post comment';
+            }
+            this.isPosting = false;
           }
-          this.isPosting = false;
-        }
-      });
+        });
+    };
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          doPost(lat, lng);
+        },
+        (error) => {
+          console.warn('Geolocation failed or denied, posting comment without coords:', error);
+          doPost();
+        },
+        { enableHighAccuracy: false, timeout: 5000 }
+      );
+    } else {
+      console.warn('Geolocation not supported by browser, posting comment without coords');
+      doPost();
+    }
   }
 
   nextPage(): void {

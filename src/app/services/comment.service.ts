@@ -12,8 +12,15 @@ export class CommentService {
 
   constructor(private http: HttpClient) {}
 
-  createComment(videoId: number, text: string): Observable<CommentResponse> {
-    const body = { text };
+  createComment(videoId: number, text: string, lat?: number | null, lng?: number | null): Observable<CommentResponse> {
+    const body: any = { text };
+
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      body.latitude = lat;
+      body.longitude = lng;
+      body.locationName = 'GPS Location';
+    }
+
     return this.http.post<CommentResponse>(
       `${this.apiUrl}/${videoId}/comments`,
       body

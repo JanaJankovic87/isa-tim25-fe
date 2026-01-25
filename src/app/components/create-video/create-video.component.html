@@ -14,9 +14,7 @@
     <div class="header">
       <h1>Upload Video</h1>
     </div>
-
     <div *ngIf="errorMessage" class="error-box">{{ errorMessage }}</div>
-
     <form [formGroup]="videoForm" (ngSubmit)="onSubmit()">
       
       <div class="field">
@@ -26,7 +24,6 @@
           Title is required (minimum 3 characters)
         </div>
       </div>
-
       <div class="field">
         <label>Description *</label>
         <textarea formControlName="description" rows="4" placeholder="Enter video description"></textarea>
@@ -34,7 +31,6 @@
           Description is required (minimum 10 characters)
         </div>
       </div>
-
       <div class="field">
         <label>Tags *</label>
         <div class="tag-row">
@@ -51,7 +47,6 @@
           You must add at least one tag
         </div>
       </div>
-
       <div class="field">
         <label>Thumbnail *</label>
         <input type="file" #thumbInput accept="image/*" (change)="onThumbnailSelected($event)" hidden>
@@ -63,7 +58,6 @@
           <button type="button" (click)="thumbInput.click()" class="btn-change">Change</button>
         </div>
       </div>
-
       <div class="field">
         <label>Video (MP4, max 200MB) *</label>
         <input type="file" #vidInput accept="video/mp4" (change)="onVideoSelected($event)" hidden>
@@ -75,12 +69,43 @@
           <button type="button" (click)="vidInput.click()" class="btn-change">Change</button>
         </div>
       </div>
-
+      
+      <!-- NOVO LOCATION POLJE -->
       <div class="field">
-        <label>Location (optional)</label>
-        <input type="text" formControlName="location" placeholder="e.g. Belgrade">
+        <label>Location</label>
+        
+        <!-- Loading indicator -->
+        <div class="location-status" *ngIf="isLoadingLocation">
+          <span class="spinner">⏳</span> Učitavam vašu lokaciju...
+        </div>
+        
+        <!-- Success indicator with coordinates -->
+        <div class="location-status success" *ngIf="latitude && longitude && !isLoadingLocation">
+          <span class="success-icon">✅</span> 
+          Lokacija: {{ locationName }} ({{ latitude.toFixed(4) }}, {{ longitude.toFixed(4) }})
+        </div>
+        
+        <!-- Input with GPS button -->
+        <div class="location-input-wrapper">
+          <input 
+            type="text" 
+            formControlName="location" 
+            placeholder="Automatski učitana lokacija"
+            [disabled]="isLoadingLocation"
+          >
+          <button
+            type="button"
+            class="btn-gps-location"
+            (click)="useGPSLocation()"
+            [disabled]="isLoadingLocation || isUploading"
+            title="Koristi preciznu GPS lokaciju"
+          >
+            📍 GPS
+          </button>
+        </div>
+        
+        <small class="form-text">Lokacija je automatski detektovana. Možete je izmeniti ili koristiti preciznu GPS lokaciju.</small>
       </div>
-
    
       <div class="buttons">
         <button type="button" (click)="onCancel()" [disabled]="isUploading" class="btn-cancel">
@@ -90,9 +115,6 @@
           {{ isUploading ? '⏳ Uploading...' : 'Publish Video' }}
         </button>
       </div>
-
     </form>
-
   </div>
-
 </div>

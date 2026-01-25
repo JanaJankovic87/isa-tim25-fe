@@ -19,6 +19,8 @@ export class VideoService {
     description: string,
     tags: string[],
     location: string | null,
+    latitude: number | null,
+    longitude: number | null,
     thumbnail: File,
     video: File,
     onProgress?: (progress: number) => void
@@ -29,7 +31,10 @@ export class VideoService {
       title: title,
       description: description,
       tags: tags,
-      location: location
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+      isLocationApproximated: true // jer koristimo geocoding, nije tačna GPS lokacija
     };
     
     formData.append('data', JSON.stringify(dto));
@@ -87,7 +92,6 @@ export class VideoService {
     );
   }
 
-  
   searchVideos(keyword: string): Observable<Video[]> {
     return this.http.get<Video[]>(`${this.apiUrl}/search`, {
       params: { keyword }
@@ -98,7 +102,6 @@ export class VideoService {
       })
     );
   }
-
 
   filterByTag(tag: string): Observable<Video[]> {
     return this.http.get<Video[]>(`${this.apiUrl}/filter`, {
@@ -119,28 +122,26 @@ export class VideoService {
     );
   }
 
-
-  
   likeVideo(id: number, lat?: number | null, lng?: number | null): Observable<any> {
-  const url = `${this.apiUrl}/${id}/like`;
-  
-  let body: any = {};
-  
-  if (typeof lat === 'number' && typeof lng === 'number') {
-    body = {
-      latitude: lat,
-      longitude: lng,
-      locationName: 'GPS Location',
-      isApproximated: false
-    };
-  } 
+    const url = `${this.apiUrl}/${id}/like`;
+    
+    let body: any = {};
+    
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      body = {
+        latitude: lat,
+        longitude: lng,
+        locationName: 'GPS Location',
+        isApproximated: false
+      };
+    } 
 
-  return this.http.post(url, body, { responseType: 'text' as const }).pipe(
-    catchError(error => {
-      console.error('Like video error:', error);
-      return throwError(() => error);
-    })
-  );
+    return this.http.post(url, body, { responseType: 'text' as const }).pipe(
+      catchError(error => {
+        console.error('Like video error:', error);
+        return throwError(() => error);
+      })
+    );
   }
   
   unlikeVideo(id: number): Observable<any> {
@@ -152,7 +153,6 @@ export class VideoService {
     );
   }
 
-  
   getLikesCount(id: number): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/${id}/likes/count`).pipe(
       catchError(error => {
@@ -162,7 +162,6 @@ export class VideoService {
     );
   }
 
-  
   getLikeStatus(id: number): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/${id}/likes/status`).pipe(
       catchError(error => {
@@ -171,6 +170,7 @@ export class VideoService {
       })
     );
   }
+
   getMyVideos(): Observable<Video[]> {
     const token = localStorage.getItem('accessToken');
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
@@ -181,33 +181,37 @@ export class VideoService {
       })
     );
   }
+
   getThumbnailUrl(id: number): string {
     return `${this.apiUrl}/${id}/thumbnail`;
   }
+
   getVideoUrl(id: number): string {
     return `${this.apiUrl}/${id}/video`;
   }
+
   recordView(id: number, lat?: number | null, lng?: number | null): Observable<any> {
-  const url = `${this.apiUrl}/${id}/view`;
+    const url = `${this.apiUrl}/${id}/view`;
 
-  let body: any = {};
+    let body: any = {};
 
-  if (typeof lat === 'number' && typeof lng === 'number') {
-    body = {
-      latitude: lat,
-      longitude: lng,
-      locationName: 'GPS Location',
-      isApproximated: false
-    };
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      body = {
+        latitude: lat,
+        longitude: lng,
+        locationName: 'GPS Location',
+        isApproximated: false
+      };
+    }
+
+    return this.http.post(url, body, { responseType: 'text' as const }).pipe(
+      catchError(error => {
+        console.error('Record view error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
-  return this.http.post(url, body, { responseType: 'text' as const }).pipe(
-    catchError(error => {
-      console.error('Record view error:', error);
-      return throwError(() => error);
-    })
-  );
-}
   getViewCount(id: number): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/${id}/views/count`).pipe(
       catchError(error => {
@@ -225,6 +229,4 @@ export class VideoService {
       })
     );
   }
-
-  
 }

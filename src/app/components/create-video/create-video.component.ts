@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { VideoService } from '../../services/video.service';
+import { GeocodingService } from '../../services/geocoding.service';
 
 @Component({
   selector: 'app-create-video',
@@ -11,7 +12,7 @@ import { VideoService } from '../../services/video.service';
   templateUrl: './create-video.component.html',
   styleUrls: ['./create-video.component.css']
 })
-export class CreateVideoComponent {
+export class CreateVideoComponent implements OnInit {
   videoForm!: FormGroup;
   thumbnailFile: File | null = null;
   videoFile: File | null = null;
@@ -23,14 +24,26 @@ export class CreateVideoComponent {
   tagInput = new FormControl('');
   errorMessage: string = '';
   
+  // Geocoding state
+  isLoadingLocation = false;
+  latitude: number | null = null;
+  longitude: number | null = null;
+  locationName: string | null = null;
+  
   readonly MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB
 
   constructor(
     private fb: FormBuilder,
     private videoService: VideoService,
+    private geocodingService: GeocodingService,
     private router: Router
   ) {
     this.initForm();
+  }
+
+  ngOnInit(): void {
+    // Automatically get user's location when component loads
+    this.loadUserLocation();
   }
 
   initForm(): void {
@@ -41,20 +54,74 @@ export class CreateVideoComponent {
     });
   }
 
-  
+  /**
+   * Load user's location from IP address
+   */
+  loadUserLocation(): void {
+    this.isLoadingLocation = true;
+    this.errorMessage = '';
+
+    this.geocodingService.getCurrentPosition().subscribe({
+      next: (result: any) => {
+        this.isLoadingLocation = false;
+        
+        if (result) {
+          this.latitude = result.latitude;
+          this.longitude = result.longitude;
+          this.locationName = result.displayName;
+          // Automatically fill location field
+          this.videoForm.patchValue({ location: result.displayName });
+          console.log('Location loaded:', result);
+        } else {
+          console.warn('Could not determine location');
+        }
+      },
+      error: (error: any) => {
+        this.isLoadingLocation = false;
+        console.error('Location loading error:', error);
+      }
+    });
+  }
+
+  /**
+   * Use precise GPS location (optional - if user wants more accuracy)
+   */
+  useGPSLocation(): void {
+    this.isLoadingLocation = true;
+    this.errorMessage = '';
+
+    this.geocodingService.getCurrentPosition().subscribe({
+      next: (result) => {
+        this.isLoadingLocation = false;
+        
+        if (result) {
+          this.latitude = result.latitude;
+          this.longitude = result.longitude;
+          this.locationName = result.displayName;
+          this.videoForm.patchValue({ location: result.displayName });
+        } else {
+          this.errorMessage = 'Nije moguće dobiti GPS lokaciju';
+        }
+      },
+      error: (error) => {
+        this.isLoadingLocation = false;
+        console.error('GPS error:', error);
+        this.errorMessage = 'Greška pri dobijanju GPS lokacije';
+      }
+    });
+  }
+
   onThumbnailSelected(event: any): void {
     const file = event.target.files[0];
     
     if (!file) return;
 
-    
     if (!file.type.startsWith('image/')) {
       this.errorMessage = 'Thumbnail must be an image file';
       return;
     }
 
     this.thumbnailFile = file;
-    
     
     const reader = new FileReader();
     reader.onload = (e: any) => {
@@ -65,26 +132,22 @@ export class CreateVideoComponent {
     this.errorMessage = '';
   }
 
-  
   onVideoSelected(event: any): void {
     const file = event.target.files[0];
     
     if (!file) return;
-
 
     if (file.type !== 'video/mp4') {
       this.errorMessage = 'Video must be MP4 format';
       return;
     }
 
-    
     if (file.size > this.MAX_VIDEO_SIZE) {
       this.errorMessage = 'Video must be less than 200MB';
       return;
     }
 
     this.videoFile = file;
-    
     
     const reader = new FileReader();
     reader.onload = (e: any) => {
@@ -95,7 +158,6 @@ export class CreateVideoComponent {
     this.errorMessage = '';
   }
 
-  
   addTag(): void {
     const tagValue = this.tagInput.value?.trim();
     
@@ -116,14 +178,11 @@ export class CreateVideoComponent {
     this.errorMessage = '';
   }
 
-  
   removeTag(tag: string): void {
     this.tags = this.tags.filter(t => t !== tag);
   }
 
-  
   onSubmit(): void {
-    
     if (this.videoForm.invalid) {
       this.errorMessage = 'Please fill all required fields';
       Object.keys(this.videoForm.controls).forEach(key => {
@@ -132,19 +191,16 @@ export class CreateVideoComponent {
       return;
     }
 
-    
     if (!this.thumbnailFile) {
       this.errorMessage = 'Thumbnail is required';
       return;
     }
 
-    
     if (!this.videoFile) {
       this.errorMessage = 'Video is required';
       return;
     }
 
-    
     if (this.tags.length === 0) {
       this.errorMessage = 'At least one tag is required';
       return;
@@ -154,15 +210,19 @@ export class CreateVideoComponent {
     this.uploadProgress = 0;
     this.errorMessage = '';
 
-    
+    // Get location from form or use auto-detected location
+    const location = this.videoForm.value.location || this.locationName;
+
     this.videoService.createVideo(
       this.videoForm.value.title,
       this.videoForm.value.description,
       this.tags,
-      this.videoForm.value.location || null,
+      location,
+      this.latitude,
+      this.longitude,
       this.thumbnailFile,
       this.videoFile,
-      (progress) => {
+      (progress: number) => {
         this.uploadProgress = progress;
       }
     ).subscribe({
@@ -178,7 +238,6 @@ export class CreateVideoComponent {
         
         this.isUploading = false;
         this.uploadProgress = 0;
-        
         
         if (error.status === 401) {
           this.errorMessage = 'You must be logged in to upload videos';
@@ -198,14 +257,12 @@ export class CreateVideoComponent {
     });
   }
 
-  
   onCancel(): void {
     if (confirm('Are you sure? All changes will be lost.')) {
       this.router.navigate(['/']);
     }
   }
 
-  
   getVideoSize(): string {
     if (!this.videoFile) return '';
     return (this.videoFile.size / 1024 / 1024).toFixed(2) + ' MB';

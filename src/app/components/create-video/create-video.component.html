@@ -76,13 +76,13 @@
         
         <!-- Loading indicator -->
         <div class="location-status" *ngIf="isLoadingLocation">
-          <span class="spinner">⏳</span> Učitavam vašu lokaciju...
+          <span class="spinner">⏳</span> Loading your location...
         </div>
         
         <!-- Success indicator with coordinates -->
         <div class="location-status success" *ngIf="latitude && longitude && !isLoadingLocation">
           <span class="success-icon">✅</span> 
-          Lokacija: {{ locationName }} ({{ latitude.toFixed(4) }}, {{ longitude.toFixed(4) }})
+          Location: {{ locationName }} ({{ latitude.toFixed(4) }}, {{ longitude.toFixed(4) }})
         </div>
         
         <!-- Input with GPS button -->
@@ -90,7 +90,7 @@
           <input 
             type="text" 
             formControlName="location" 
-            placeholder="Automatski učitana lokacija"
+            placeholder="Address or place name"
             [disabled]="isLoadingLocation"
           >
           <button
@@ -98,13 +98,11 @@
             class="btn-gps-location"
             (click)="useGPSLocation()"
             [disabled]="isLoadingLocation || isUploading"
-            title="Koristi preciznu GPS lokaciju"
+            title="Use precise GPS location"
           >
             📍 GPS
           </button>
         </div>
-        
-        <small class="form-text">Lokacija je automatski detektovana. Možete je izmeniti ili koristiti preciznu GPS lokaciju.</small>
       </div>
    
       <div class="buttons">

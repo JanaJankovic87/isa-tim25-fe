@@ -148,14 +148,32 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
     if (!this.videoId || !this.video || !this.video.id) return;
     // Ako nije autor videa, registruj pregled
     if (!this.isMyVideo()) {
-      this.videoService.recordView(Number(this.videoId)).subscribe({
-        next: () => {
-          this.loadViewCount();
-        },
-        error: () => {
-          this.loadViewCount();
-        }
-      });
+      const doRecord = (lat?: number, lng?: number) => {
+        this.videoService.recordView(Number(this.videoId), lat ?? null, lng ?? null).subscribe({
+          next: () => {
+            this.loadViewCount();
+          },
+          error: () => {
+            this.loadViewCount();
+          }
+        });
+      };
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            doRecord(lat, lng);
+          },
+          (error) => {
+            doRecord();
+          },
+          { enableHighAccuracy: false, timeout: 5000 }
+        );
+      } else {
+        doRecord();
+      }
     } else {
       this.loadViewCount();
     }
@@ -234,21 +252,53 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
     }
 
     const isCurrentlyLiked = this.video.likedByCurrentUser;
-    
-    const request = isCurrentlyLiked 
-      ? this.videoService.unlikeVideo(Number(this.videoId))
-      : this.videoService.likeVideo(Number(this.videoId));
 
-    request.subscribe({
-      next: (response) => {
-        console.log('Like toggled:', response);
-        this.loadLikeData();
-      },
-      error: (err) => {
-        console.error('Error toggling like:', err);
-        alert('Error liking video!');
-      }
-    });
+    if (isCurrentlyLiked) {
+      // Unlike immediately
+      this.videoService.unlikeVideo(Number(this.videoId)).subscribe({
+        next: (response) => {
+          console.log('Unlike success:', response);
+          this.loadLikeData();
+        },
+        error: (err) => {
+          console.error('Error unliking video:', err);
+          alert('Error unliking video!');
+        }
+      });
+      return;
+    }
+
+    const doLike = (lat?: number, lng?: number) => {
+      this.videoService.likeVideo(Number(this.videoId), lat ?? null, lng ?? null).subscribe({
+        next: (response) => {
+          console.log('Like success:', response);
+          this.loadLikeData();
+        },
+        error: (err) => {
+          console.error('Error liking video:', err);
+          alert('Error liking video!');
+        }
+      });
+    };
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          doLike(lat, lng);
+        },
+        (error) => {
+          console.warn('Geolocation failed or denied, sending like without coords:', error);
+          doLike();
+        },
+        { enableHighAccuracy: false, timeout: 5000 }
+      );
+    } else {
+      // Geolocation not supported
+      console.warn('Geolocation not supported by browser, sending like without coords');
+      doLike();
+    }
   }
 
   deleteVideo(): void {

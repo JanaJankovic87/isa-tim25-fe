@@ -1,0 +1,126 @@
+<div class="performance-dashboard">
+  <div class="header">
+    <h1>📊 Performance Metrics Dashboard</h1>
+    <div class="actions">
+      <button (click)="runTest(50)" [disabled]="isRunningTest" class="btn btn-primary">
+        {{ isRunningTest ? '⏳ Running Test...' : '▶️ Run Test (50 iterations)' }}
+      </button>
+      <button (click)="resetMetrics()" [disabled]="isRunningTest" class="btn btn-secondary">
+        🔄 Reset Metrics
+      </button>
+      <button (click)="loadMetrics()" [disabled]="isLoading" class="btn btn-secondary">
+        ↻ Refresh
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">
+    Loading metrics...
+  </div>
+
+  <div *ngIf="metrics && !isLoading" class="content">
+    
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card">
+        <h3>Total Requests</h3>
+        <p class="big-number">{{ metrics.totalRequests }}</p>
+      </div>
+      <div class="card">
+        <h3>Cache Hits</h3>
+        <p class="big-number success">{{ metrics.cacheHits }}</p>
+      </div>
+      <div class="card">
+        <h3>Cache Misses</h3>
+        <p class="big-number warning">{{ metrics.cacheMisses }}</p>
+      </div>
+      <div class="card">
+        <h3>Cache Hit Rate</h3>
+        <p class="big-number">{{ metrics.cacheHitRate.toFixed(2) }}%</p>
+      </div>
+    </div>
+
+    <!-- Optimal Strategy -->
+    <div class="optimal-strategy">
+      <h2>🏆 Optimal Strategy</h2>
+      <p class="optimal-name">{{ getOptimalStrategy() }}</p>
+      <p class="optimal-desc">Based on lowest average response time with >80% cache hit rate</p>
+    </div>
+
+    <!-- Metrics Table -->
+    <div class="metrics-table">
+      <h2>📈 Strategy Comparison</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Avg (ms)</th>
+            <th>Min (ms)</th>
+            <th>Max (ms)</th>
+            <th>Median (ms)</th>
+            <th>P95 (ms)</th>
+            <th>Requests</th>
+            <th>Cache Hit %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let strategy of getStrategyKeys()" 
+              [class.optimal]="strategy === getOptimalStrategy()">
+            <td><strong>{{ strategy }}</strong></td>
+            <td>{{ metrics.strategies[strategy].averageResponseTime.toFixed(2) }}</td>
+            <td>{{ metrics.strategies[strategy].minResponseTime.toFixed(2) }}</td>
+            <td>{{ metrics.strategies[strategy].maxResponseTime.toFixed(2) }}</td>
+            <td>{{ metrics.strategies[strategy].medianResponseTime.toFixed(2) }}</td>
+            <td>{{ metrics.strategies[strategy].p95ResponseTime.toFixed(2) }}</td>
+            <td>{{ metrics.strategies[strategy].totalRequests }}</td>
+            <td>{{ metrics.strategies[strategy].cacheHitRate.toFixed(2) }}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts">
+      <div class="chart-container">
+        <h3>Response Time Comparison</h3>
+        <canvas id="responseTimeChart"></canvas>
+      </div>
+      
+      <div class="chart-container">
+        <h3>Cache Hit Rate Distribution</h3>
+        <canvas id="cacheHitChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="analysis">
+      <h2>📊 Analysis</h2>
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <h4>⚡ Speed Winner</h4>
+          <p>Strategy with lowest average response time</p>
+          <p class="highlight">
+            {{ getSpeedWinner() }}
+          </p>
+        </div>
+
+        <div class="analysis-item">
+          <h4>💾 Cache Champion</h4>
+          <p>Strategy with highest cache hit rate</p>
+          <p class="highlight">
+            {{ getCacheChampion() }}
+          </p>
+        </div>
+
+        <div class="analysis-item">
+          <h4>🎯 Most Consistent</h4>
+          <p>Strategy with smallest difference between min and max</p>
+          <p class="highlight">
+            {{ getMostConsistent() }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

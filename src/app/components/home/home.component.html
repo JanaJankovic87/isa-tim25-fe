@@ -1,10 +1,4 @@
-<div class="left-navbar" style="position: fixed; top: 0; left: 0; width: 48px; height: 100vh; background: #888; z-index: 900; display: flex; flex-direction: column; align-items: center; padding-top: 72px; box-shadow: 2px 0 8px rgba(0,0,0,0.04);">
-  <!-- Fire icon: show trending only -->
-  <a href="#" (click)="showTrendingOnly()" [style.opacity]="activeSection === 'trending' ? '1' : '0.5'" style="margin: 16px 0; color: #fff; font-size: 20px; text-decoration: none; cursor:pointer;">🔥</a>
-  <!-- Pin icon: show local trending only (optional, can be extended) -->
-  <a href="#" (click)="showLocalTrending()" [style.opacity]="activeSection === 'local' ? '1' : '0.5'" style="margin: 16px 0; color: #fff; font-size: 20px; text-decoration: none; cursor:pointer;">📍</a>
-</div>
-<div class="page-container" style="padding-top: 72px; padding-left: 48px;">
+<div class="page-container" style="padding-top: 72px;">
   <div *ngIf="showSessionExpired" class="session-expired-alert">
     Session expired. Please log in again.
   
@@ -89,69 +83,19 @@
 
   <div class="content">
     
-    <!-- GLOBALNI TRENDING -->
-    <div *ngIf="!isLoading && trendingVideos.length > 0 && activeSection === 'trending'" class="trending-section">
-      <div class="trending-carousel">
-        <button 
-          class="carousel-arrow left" 
-          (click)="prevTrending()"
-          [disabled]="currentTrendingIndex === 0">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-          </svg>
-        </button>
-
-        <div class="carousel-track-container">
-          <div class="carousel-track"
-            [style.transform]="'translateX(-' + (currentTrendingIndex * 100) + '%)'"><!-- fixed invalid debug output -->
-          
-            <div 
-              *ngFor="let trending of trendingVideos; let i = index" 
-              class="carousel-slide"
-              (click)="trending.id ? viewTrendingVideo(trending.id) : null">
-              <img 
-                [src]="trending.id ? getThumbnailUrl(trending.id) : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Video%3C/text%3E%3C/svg%3E'" 
-                [alt]="trending.title || 'Video'"
-                loading="lazy"
-                class="trending-thumbnail"
-                (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETrending Video%3C/text%3E%3C/svg%3E'">
-              <div class="trending-overlay">
-                <div class="trending-badge">🔥 Trending Course</div>
-                <h3 class="trending-video-title">{{ trending.title || 'Untitled' }}</h3>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <button 
-          class="carousel-arrow right" 
-          (click)="nextTrending()"
-          [disabled]="currentTrendingIndex >= trendingVideos.length - 1">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
-            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
-          </svg>
-        </button>
-
-        <div class="carousel-indicators">
-          <button 
-            *ngFor="let trending of trendingVideos; let i = index"
-            class="indicator"
-            [class.active]="i === currentTrendingIndex"
-            (click)="goToTrendingSlide(i)">
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- ============================================ -->
-    <!-- LOCAL TRENDING - NOVI DEO (S2 zadatak) -->
+    <!-- LOCAL TRENDING - Trending Videos Near You -->
     <!-- ============================================ -->
-    <div class="local-trending-section" *ngIf="activeSection === 'local'" style="margin-top:15px;">
-      <div class="section-header" style="position: relative; display: flex; align-items: center; margin-bottom: 20px; min-height: 48px;">
+    <div class="local-trending-section" style="margin-top: 0; margin-bottom: 40px;">
+      <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <h2 style="font-size: 20px; font-weight: 600; color: #0f0f0f; margin: 0; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">📍</span>
+          Trending Near You
+        </h2>
         
-        <div class="radius-control" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 10px;">
-          <label for="radiusSelect" style="font-size: 14px; color: #666;">Radius:</label>
-          <select id="radiusSelect" [(ngModel)]="radiusKm" (change)="onRadiusChange()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+        <div class="radius-control" style="display: flex; align-items: center; gap: 12px;">
+          <label for="radiusSelect" style="font-size: 14px; color: #606060; font-weight: 500;">Radius:</label>
+          <select id="radiusSelect" [(ngModel)]="radiusKm" (change)="onRadiusChange()" style="padding: 10px 16px; border: 1px solid #d3d3d3; border-radius: 8px; font-size: 14px; background: #fff; cursor: pointer; transition: border-color 0.2s;">
             <option [value]="10">10 km</option>
             <option [value]="25">25 km</option>
             <option [value]="50">50 km</option>
@@ -162,28 +106,31 @@
       </div>
 
       <!-- Location info -->
-      <div *ngIf="isLocationApproximated" style="background: #fff3cd; color: #856404; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-size: 14px;">
-        ⚠️ Location approximated from IP address
+      <div *ngIf="isLocationApproximated" style="background: #fff8e1; border-left: 4px solid #ffc107; color: #856404; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 20px;">⚠️</span>
+        <span>Location approximated from IP address</span>
       </div>
 
       <!-- Loading -->
-      <div *ngIf="localTrendingLoading" style="text-align: center; padding: 40px; color: #666;">
-        <p>Loading local trending videos...</p>
+      <div *ngIf="localTrendingLoading" style="text-align: center; padding: 60px 20px;">
+        <div style="display: inline-block; width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 20px; color: #606060; font-size: 16px;">Loading trending videos near you...</p>
       </div>
 
       <!-- Error -->
-      <div *ngIf="localTrendingError" style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; text-align: center;">
-        <p>{{ localTrendingError }}</p>
-        <button (click)="loadLocalTrendingVideos()" style="margin-top: 10px; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+      <div *ngIf="localTrendingError" style="background: #ffebee; border-left: 4px solid #d32f2f; color: #c62828; padding: 20px; border-radius: 8px; text-align: center;">
+        <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500;">{{ localTrendingError }}</p>
+        <button (click)="loadLocalTrendingVideos()" style="padding: 10px 24px; background: #d32f2f; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#b71c1c'" onmouseout="this.style.background='#d32f2f'">Retry</button>
       </div>
 
       <!-- Local Trending Carousel -->
-      <div *ngIf="!localTrendingLoading && !localTrendingError && localTrendingVideos.length > 0" class="trending-section">
+      <div *ngIf="!localTrendingLoading && !localTrendingError && localTrendingVideos.length > 0" class="trending-section" style="margin-bottom: 40px;">
         <div class="trending-carousel">
           <button 
             class="carousel-arrow left" 
             (click)="prevLocalTrending()" 
-            [disabled]="currentLocalTrendingIndex === 0">
+            [disabled]="currentLocalTrendingIndex === 0"
+            style="background: rgba(0,0,0,0.7); border: none; border-radius: 50%; width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
               <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
             </svg>
@@ -197,21 +144,23 @@
               <div 
                 *ngFor="let video of localTrendingVideos; let i = index" 
                 class="carousel-slide"
-                (click)="viewLocalTrendingVideo(video.id)">
+                (click)="viewLocalTrendingVideo(video.id)"
+                style="cursor: pointer; transition: transform 0.3s;">
                 
                 <img
                   [src]="video.id ? getThumbnailUrl(video.id) : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Video%3C/text%3E%3C/svg%3E'"
                   [alt]="video.title || 'Video'"
                   loading="lazy"
                   class="trending-thumbnail"
+                  style="border-radius: 12px;"
                   (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETrending Video%3C/text%3E%3C/svg%3E'">
                 
-                <div class="trending-overlay">
-                  <div style="margin-top: 45px;" class="trending-badge">📍 Trending Near You </div>
-                  <div class="trending-badge" *ngIf="video.distanceKm != null" style="margin-top: 6px;">📍 {{ video.distanceKm | number:'1.1-1' }} km away</div>
-                  <h3 class="trending-video-title">{{ video.title }}</h3>
-                  <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 14px;"></div>
-                  <p style="font-size: 13px; margin-top: 8px; opacity: 0.8;">{{ video.location }}</p>
+                <div class="trending-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, transparent 100%); border-radius: 12px; padding: 24px;">
+                  <div *ngIf="video.distanceKm != null" style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.9); color: #0f0f0f; padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 500;">
+                    📍 {{ video.distanceKm | number:'1.1-1' }} km away
+                  </div>
+                  <h3 class="trending-video-title" style="font-size: 22px; font-weight: 600; margin: 0 0 8px 0;">{{ video.title }}</h3>
+                  <p style="font-size: 14px; margin: 0; opacity: 0.9; color: #e0e0e0;">{{ video.location }}</p>
                 </div>
               </div>
             </div>
@@ -220,26 +169,33 @@
           <button 
             class="carousel-arrow right" 
             (click)="nextLocalTrending()" 
-            [disabled]="currentLocalTrendingIndex === localTrendingVideos.length - 1">
+            [disabled]="currentLocalTrendingIndex === localTrendingVideos.length - 1"
+            style="background: rgba(0,0,0,0.7); border: none; border-radius: 50%; width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
               <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
             </svg>
           </button>
 
-          <div class="carousel-indicators">
+          <div class="carousel-indicators" style="margin-top: 20px;">
             <button 
               *ngFor="let video of localTrendingVideos; let i = index"
               class="indicator"
               [class.active]="i === currentLocalTrendingIndex"
-              (click)="goToLocalTrendingSlide(i)">
+              (click)="goToLocalTrendingSlide(i)"
+              style="width: 10px; height: 10px; border-radius: 50%; border: none; background: #d3d3d3; margin: 0 5px; cursor: pointer; transition: all 0.3s;"
+              [style.background]="i === currentLocalTrendingIndex ? '#0066cc' : '#d3d3d3'"
+              [style.width]="i === currentLocalTrendingIndex ? '32px' : '10px'"
+              [style.border-radius]="i === currentLocalTrendingIndex ? '5px' : '50%'">
             </button>
           </div>
         </div>
       </div>
 
       <!-- No videos message -->
-      <div *ngIf="!localTrendingLoading && !localTrendingError && localTrendingVideos.length === 0" style="text-align: center; padding: 40px; color: #666;">
-        <p>No trending videos found in your area. Try increasing the radius!</p>
+      <div *ngIf="!localTrendingLoading && !localTrendingError && localTrendingVideos.length === 0" style="text-align: center; padding: 60px 20px; background: #f9f9f9; border-radius: 12px; color: #606060;">
+        <span style="font-size: 48px; display: block; margin-bottom: 16px;">📍</span>
+        <p style="font-size: 18px; margin: 0; font-weight: 500;">No trending videos found in your area</p>
+        <p style="font-size: 14px; margin: 8px 0 0 0;">Try increasing the radius to see more videos!</p>
       </div>
     </div>
     <!-- ============================================ -->

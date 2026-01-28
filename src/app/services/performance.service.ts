@@ -44,7 +44,7 @@ export class PerformanceService {
       params.lat = lat.toString();
       params.lng = lng.toString();
     }
-    return this.http.post<PerformanceMetrics>(`${this.apiUrl}/performance-test`, null, { params });
+    return this.http.get<PerformanceMetrics>(`${this.apiUrl}/performance-test`, { params });
   }
 
   testStrategy(strategy: string, lat?: number, lng?: number): Observable<any> {

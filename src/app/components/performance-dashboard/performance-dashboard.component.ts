@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PerformanceService, PerformanceMetrics } from '../../services/performance.service';
 import { Chart, registerables } from 'chart.js';
@@ -13,40 +13,6 @@ Chart.register(...registerables);
   styleUrls: ['./performance-dashboard.component.css']
 })
 export class PerformanceDashboardComponent implements OnInit {
-    /**
-     * Returns the strategy key with the lowest average response time
-     */
-    getSpeedWinner(): string {
-      const keys = this.getStrategyKeys();
-      if (!keys.length) return 'N/A';
-      return keys.reduce((best, current) =>
-        this.metrics!.strategies[current].averageResponseTime < this.metrics!.strategies[best].averageResponseTime ? current : best
-      );
-    }
-
-    /**
-     * Returns the strategy key with the highest cache hit rate
-     */
-    getCacheChampion(): string {
-      const keys = this.getStrategyKeys();
-      if (!keys.length) return 'N/A';
-      return keys.reduce((best, current) =>
-        this.metrics!.strategies[current].cacheHitRate > this.metrics!.strategies[best].cacheHitRate ? current : best
-      );
-    }
-
-    /**
-     * Returns the strategy key with the smallest difference between min and max response time
-     */
-    getMostConsistent(): string {
-      const keys = this.getStrategyKeys();
-      if (!keys.length) return 'N/A';
-      return keys.reduce((best, current) => {
-        const currentDiff = this.metrics!.strategies[current].maxResponseTime - this.metrics!.strategies[current].minResponseTime;
-        const bestDiff = this.metrics!.strategies[best].maxResponseTime - this.metrics!.strategies[best].minResponseTime;
-        return currentDiff < bestDiff ? current : best;
-      });
-    }
   metrics: PerformanceMetrics | null = null;
   isLoading = false;
   isRunningTest = false;
@@ -55,7 +21,10 @@ export class PerformanceDashboardComponent implements OnInit {
   responseTimeChart: Chart | null = null;
   cacheHitChart: Chart | null = null;
 
-  constructor(private performanceService: PerformanceService) {}
+  constructor(
+    private performanceService: PerformanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadMetrics();
@@ -84,6 +53,7 @@ export class PerformanceDashboardComponent implements OnInit {
       next: (data) => {
         this.metrics = data;
         this.isRunningTest = false;
+        this.cdr.detectChanges();
         this.updateCharts();
         console.log('✓ Performance test completed!');
       },
@@ -216,5 +186,40 @@ export class PerformanceDashboardComponent implements OnInit {
     return viable.reduce((best, current) =>
       current[1].averageResponseTime < best[1].averageResponseTime ? current : best
     )[0];
+  }
+
+  /**
+   * Returns the strategy key with the lowest average response time
+   */
+  getSpeedWinner(): string {
+    const keys = this.getStrategyKeys();
+    if (!keys.length) return 'N/A';
+    return keys.reduce((best, current) =>
+      this.metrics!.strategies[current].averageResponseTime < this.metrics!.strategies[best].averageResponseTime ? current : best
+    );
+  }
+
+  /**
+   * Returns the strategy key with the highest cache hit rate
+   */
+  getCacheChampion(): string {
+    const keys = this.getStrategyKeys();
+    if (!keys.length) return 'N/A';
+    return keys.reduce((best, current) =>
+      this.metrics!.strategies[current].cacheHitRate > this.metrics!.strategies[best].cacheHitRate ? current : best
+    );
+  }
+
+  /**
+   * Returns the strategy key with the smallest difference between min and max response time
+   */
+  getMostConsistent(): string {
+    const keys = this.getStrategyKeys();
+    if (!keys.length) return 'N/A';
+    return keys.reduce((best, current) => {
+      const currentDiff = this.metrics!.strategies[current].maxResponseTime - this.metrics!.strategies[current].minResponseTime;
+      const bestDiff = this.metrics!.strategies[best].maxResponseTime - this.metrics!.strategies[best].minResponseTime;
+      return currentDiff < bestDiff ? current : best;
+    });
   }
 }

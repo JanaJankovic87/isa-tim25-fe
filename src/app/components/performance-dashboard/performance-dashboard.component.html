@@ -2,16 +2,11 @@
   <div class="header">
     <h1>📊 Performance Metrics Dashboard</h1>
     <div class="actions">
-      <button (click)="runTest(50)" [disabled]="isRunningTest" class="btn btn-primary">
-        {{ isRunningTest ? '⏳ Running Test...' : '▶️ Run Test (50 iterations)' }}
-      </button>
-      <button (click)="resetMetrics()" [disabled]="isRunningTest" class="btn btn-secondary">
-        🔄 Reset Metrics
-      </button>
-      <button (click)="loadMetrics()" [disabled]="isLoading" class="btn btn-secondary">
-        ↻ Refresh
-      </button>
-    </div>
+  <button (click)="runTest(100)" [disabled]="isRunningTest">
+    {{ isRunningTest ? 'Running Test...' : 'Run Performance Test' }}
+  </button>
+  <button (click)="resetMetrics()">Reset Metrics</button>
+</div>
   </div>
 
   <div *ngIf="isLoading" class="loading">

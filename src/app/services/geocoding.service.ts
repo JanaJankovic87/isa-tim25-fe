@@ -22,7 +22,7 @@ export class GeocodingService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get user's location based on their IP address
+   Get user's location based on their IP address
    */
   getLocationFromIP(): Observable<GeocodingResult | null> {
     return this.http.get<any>(this.ipapiUrl).pipe(
@@ -84,7 +84,7 @@ export class GeocodingService {
   }
 
   /**
-   * Get user's current position using browser Geolocation API
+   Get user's current position using browser Geolocation API
    */
   getCurrentPosition(): Observable<GeocodingResult | null> {
     return new Observable(observer => {

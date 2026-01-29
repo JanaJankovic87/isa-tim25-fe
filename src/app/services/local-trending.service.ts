@@ -25,11 +25,6 @@ export class LocalTrendingService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * S2: Dobavi lokalne trending videe
-   * Ako user da permission, šalje lat/lng
-   * Inače backend koristi IP geolocation
-   */
   getLocalTrending(radiusKm: number = 50, limit: number = 10): Observable<TrendingResult> {
     return new Observable(observer => {
       // Pokušaj da dobiješ lokaciju od korisnika (browser geolocation)
@@ -113,14 +108,14 @@ export class LocalTrendingService {
   }
 
   /**
-   * S2: Dobavi performance metrics
+   Dobavi performance metrics
    */
   getMetrics(): Observable<any> {
     return this.http.get(`${this.apiUrl}/metrics`);
   }
 
   /**
-   * S2: Reset metrics (za testiranje)
+  Reset metrics (za testiranje)
    */
   resetMetrics(): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/metrics/reset`, {});

@@ -17,8 +17,13 @@ import { TrendingVideoDTO } from '../../models/video.model';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
+    // Control which section is shown: 'trending' | 'local'
+    activeSection: 'trending' | 'local' = 'trending';
   videos: Video[] = [];
+  trendingVideos: TrendingVideoDTO[] = [];
+  currentTrendingIndex = 0;
   
+  // LOCAL TRENDING (NOVO)
   localTrendingVideos: any[] = [];
   currentLocalTrendingIndex = 0;
   localTrendingLoading = false;
@@ -46,10 +51,20 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.activeSection = 'trending'; 
     this.loadTags();
     this.loadVideos();
+    this.loadTrendingVideos();
     this.loadLocalTrendingVideos();
     this.checkSessionExpired();
+  }
+
+  showTrendingOnly(): void {
+    this.activeSection = 'trending';
+  }
+
+  showLocalTrending(): void {
+    this.activeSection = 'local';
   }
 
   checkSessionExpired(): void {
@@ -355,6 +370,75 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  // GLOBALNI TRENDING 
+  loadTrendingVideos(): void {
+    this.videoService.getTrendingVideos().subscribe({
+      next: (trending: any) => {
+        console.log('=== TRENDING VIDEOS RAW RESPONSE ===');
+        console.log('Tip podataka:', typeof trending);
+        console.log('Da li je niz:', Array.isArray(trending));
+        console.log('Dužina niza:', trending?.length);
+        console.log('Sirovi podaci:', JSON.stringify(trending, null, 2));
+        
+        if (Array.isArray(trending)) {
+          this.trendingVideos = trending
+            .filter(item => item && item.video && item.video.id)
+            .map(item => {
+              const video = item.video;
+              const score = item.trendingScore || 0;
+              
+              console.log('Processing video:', {
+                id: video.id,
+                title: video.title,
+                score: score
+              });
+              
+              return {
+                id: video.id,
+                title: video.title || 'Untitled',
+                thumbnailPath: video.thumbnailPath || undefined,
+                viewsCount: video.viewsCount || 0,
+                likesCount: video.likesCount || 0,
+                score: score
+              };
+            });
+          
+          console.log('=== PROCESSED TRENDING VIDEOS ===');
+          console.log('Broj validnih videa:', this.trendingVideos.length);
+          console.log('Processovani podaci:', this.trendingVideos);
+        } else {
+          console.error('Backend nije vratio niz! Vratio je:', trending);
+          this.trendingVideos = [];
+        }
+        
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('=== ERROR LOADING TRENDING ===');
+        console.error('Status:', err.status);
+        console.error('Message:', err.message);
+        console.error('Full error:', err);
+        this.trendingVideos = [];
+      }
+    });
+  }
+
+  nextTrending(): void {
+    if (this.currentTrendingIndex < this.trendingVideos.length - 1) {
+      this.currentTrendingIndex++;
+    }
+  }
+
+  prevTrending(): void {
+    if (this.currentTrendingIndex > 0) {
+      this.currentTrendingIndex--;
+    }
+  }
+
+  goToTrendingSlide(index: number): void {
+    this.currentTrendingIndex = index;
+  }
+
   viewTrendingVideo(id: number): void {
     if (!id) {
       console.error('Invalid video ID:', id);
@@ -362,11 +446,7 @@ export class HomeComponent implements OnInit {
     }
     this.router.navigate(['/video', id]);
   }
-
-  // ========================================
-  // LOCAL TRENDING (NOVO - tvoj S2 zadatak)
-  // ========================================
-  
+  // LOKALNI TRENDING
   loadLocalTrendingVideos(): void {
     this.localTrendingLoading = true;
     this.localTrendingError = null;

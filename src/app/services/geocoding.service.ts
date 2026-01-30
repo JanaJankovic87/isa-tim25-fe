@@ -21,9 +21,8 @@ export class GeocodingService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   Get user's location based on their IP address
-   */
+  
+  // Get user's location based on their IP address
   getLocationFromIP(): Observable<GeocodingResult | null> {
     return this.http.get<any>(this.ipapiUrl).pipe(
       map(response => {
@@ -46,12 +45,8 @@ export class GeocodingService {
     );
   }
 
-  /**
-   * Reverse geocode: Get location name from coordinates
-   * @param latitude 
-   * @param longitude 
-   * @returns Observable with location details
-   */
+  
+  // Reverse geocode: Get location name from coordinates 
   reverseGeocode(latitude: number, longitude: number): Observable<GeocodingResult | null> {
     const params = {
       lat: latitude.toString(),
@@ -61,7 +56,7 @@ export class GeocodingService {
     };
 
     return this.http.get<any>(this.nominatimReverseUrl, { params }).pipe(
-      delay(1000), // Nominatim requires 1 second between requests
+      delay(1000), 
       map(response => {
         if (response && response.address) {
           const addr = response.address;
@@ -83,9 +78,9 @@ export class GeocodingService {
     );
   }
 
-  /**
-   Get user's current position using browser Geolocation API
-   */
+  
+  //Get user's current position using browser Geolocation API
+   
   getCurrentPosition(): Observable<GeocodingResult | null> {
     return new Observable(observer => {
       if (!navigator.geolocation) {
@@ -142,9 +137,9 @@ export class GeocodingService {
     });
   }
 
-  /**
-   * Format location string from ipapi response
-   */
+  
+  // Format location string from ipapi response
+   
   private formatLocation(response: any): string {
     const parts = [];
     
@@ -155,9 +150,9 @@ export class GeocodingService {
     return parts.join(', ');
   }
 
-  /**
-   * Format location string from Nominatim response
-   */
+  
+  // Format location string from Nominatim response
+   
   private formatNominatimLocation(address: any): string {
     const parts = [];
     

@@ -44,14 +44,22 @@
   justify-content: center;
 }
 
+.sidebar-thumb::before {
+  content: '🎬';
+  font-size: 40px;
+  opacity: 0.3;
+  position: absolute;
+  z-index: 1;
+}
 
 .sidebar-thumb img {
-  position: static;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: 1;
-  display: block;
+  z-index: 2;
 }
 
 .sidebar-info {

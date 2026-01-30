@@ -107,16 +107,16 @@ export class LocalTrendingService {
     });
   }
 
-  /**
-   Dobavi performance metrics
-   */
+  
+  // Dobavi performance metrics
+
   getMetrics(): Observable<any> {
     return this.http.get(`${this.apiUrl}/metrics`);
   }
 
-  /**
-  Reset metrics (za testiranje)
-   */
+  
+  //Reset metrics (za testiranje)
+   
   resetMetrics(): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/metrics/reset`, {});
   }

@@ -46,8 +46,50 @@
   color: #fff;
 }
 
+.quality-btn.disabled-processing {
+  background: rgba(200, 200, 200, 0.3);
+  border: 2px dashed #ccc;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .quality-btn svg {
   flex-shrink: 0;
+}
+
+.transcoding-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.transcoding-status.processing {
+  color: #e67e22;
+  background: rgba(230, 126, 34, 0.1);
+}
+
+.transcoding-status.pending {
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.transcoding-status.failed {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.quality-status {
+  margin-left: auto;
+  background: linear-gradient(135deg, #d1708f 0%, #c95d84 100%);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-title {

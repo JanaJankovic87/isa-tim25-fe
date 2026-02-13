@@ -40,22 +40,41 @@
         
         <div class="info-box">
           <!-- Quality Selector - iznad naslova -->
-          <div class="quality-buttons">
+          <div class="quality-buttons" *ngIf="presetsChecked">
             <span class="quality-label">Quality:</span>
+            
+            <!-- Original dugme - uvek dostupno -->
             <button 
-              *ngFor="let q of availableQualities" 
               class="quality-btn"
-              [class.active]="selectedQuality === q"
-              [disabled]="!availablePresets[q]"
-              [style.opacity]="availablePresets[q] ? '1' : '0.45'"
-              [title]="availablePresets[q] ? q : q + ' - processing...'"
-              (click)="availablePresets[q] && onQualityChange(q)">
-              <span>{{ q }}</span>
-              <span *ngIf="!availablePresets[q]" style="margin-left:6px;">⏳</span>
+              [class.active]="selectedQuality === 'original'"
+              (click)="onQualityChange('original')">
+              <span>Original</span>
             </button>
 
-            <span *ngIf="transcodingInProgress" style="color: orange; font-size: 12px; margin-left:10px;">
-              ⏳ Video is being processed...
+            <!-- Prikazuj dugmiće za presete - aktivni ako su dostupni, zamagljeni ako se procesiraju -->
+            <ng-container *ngFor="let q of availableQualities">
+              <!-- Ako je preset dostupan - normalno dugme -->
+              <button 
+                *ngIf="availablePresets[q]"
+                class="quality-btn"
+                [class.active]="selectedQuality === q"
+                (click)="onQualityChange(q)">
+                <span>{{ q }}</span>
+              </button>
+              
+              <!-- Ako preset nije dostupan i transkodovanje je u toku - zamagljeno dugme sa tooltip-om -->
+              <button 
+                *ngIf="!availablePresets[q] && (transcodingStatus === 'PROCESSING' || transcodingStatus === 'PENDING')"
+                class="quality-btn disabled-processing"
+                title="Processing"
+                disabled>
+                <span>{{ q }}</span>
+              </button>
+            </ng-container>
+
+            <!-- FAILED poruka -->
+            <span *ngIf="transcodingStatus === 'FAILED'" class="transcoding-status failed">
+              ⚠️ Transcoding failed
             </span>
           </div>
           

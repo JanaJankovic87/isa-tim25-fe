@@ -201,6 +201,13 @@ export class VideoService {
     );
   }
 
+  getTranscodingStatus(videoId: number): Observable<string> {
+    return this.http.get<{status: string}>(`${this.apiUrl}/${videoId}/transcoding-status`).pipe(
+      map(r => r.status),
+      catchError(() => of('PENDING'))
+    );
+  }
+
   recordView(id: number, lat?: number | null, lng?: number | null): Observable<any> {
     const url = `${this.apiUrl}/${id}/view`;
 

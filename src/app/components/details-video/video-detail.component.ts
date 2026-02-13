@@ -1,5 +1,5 @@
 
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
@@ -10,7 +10,8 @@ import { Video } from '../../models/video.model';
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { CommentsComponent } from '../comments/comments.component';
-import { filter } from 'rxjs/operators';
+import { filter, switchMap, takeWhile } from 'rxjs/operators';
+import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-video-detail',
@@ -19,7 +20,7 @@ import { filter } from 'rxjs/operators';
   templateUrl: './video-detail.component.html',
   styleUrls: ['./video-detail.component.css']
 })
-export class VideoDetailComponent implements OnInit, AfterViewInit {
+export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
 
     // Controls rendering of video element to avoid brief black frame while switching
@@ -51,6 +52,10 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   transcodingInProgress: boolean = false;
 
   presetsChecked: boolean = false;
+
+  // Transcoding status polling
+  transcodingStatus: string = 'PENDING';
+  private pollingSubscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -111,6 +116,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
             this.video = data;
               this.isVideoLoaded = true;
               this.checkAvailablePresets();
+              this.startTranscodingPolling();
             this.loadLikeData();
             this.handleViews();
             if (data.userId != null && data.userId != undefined) {
@@ -167,9 +173,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
         const anyAvailable = Object.values(presets).some(v => v === true);
         this.transcodingInProgress = !anyAvailable;
 
-        if (presets['720p']) this.selectedQuality = '720p';
-        else if (presets['480p']) this.selectedQuality = '480p';
-        else this.selectedQuality = 'original';
+        // Always default to original
+        this.selectedQuality = 'original';
 
        
         this.presetsChecked = true;
@@ -285,10 +290,18 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
     return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
   }
 
+  getQualityLabel(): string {
+    if (this.selectedQuality === 'original') {
+      return 'Original';
+    }
+    return this.selectedQuality;
+  }
+
   // Promena kvaliteta videa
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
-    if (!this.availablePresets[quality]) return; 
+    // Original je uvek dostupan, ostali samo ako su transkodovani
+    if (quality !== 'original' && !this.availablePresets[quality]) return; 
     this.selectedQuality = quality;
 
     // Briefly unmount and remount the video element so browser reloads stream
@@ -428,5 +441,39 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
           console.error('Error loading video author:', err);
         }
       });
+  }
+
+  startTranscodingPolling(): void {
+    if (!this.videoId) return;
+    
+    // Prvo proveri trenutni status
+    this.videoService.getTranscodingStatus(Number(this.videoId)).subscribe(status => {
+      this.transcodingStatus = status;
+      this.cdr.detectChanges();
+      
+      // Ako je COMPLETED ili FAILED, ne pokreći polling
+      if (status === 'COMPLETED' || status === 'FAILED') {
+        if (status === 'COMPLETED') {
+          this.checkAvailablePresets();
+        }
+        return;
+      }
+      
+      // Inače pokreni polling svakih 10 sekundi
+      this.pollingSubscription = interval(10000).pipe(
+        switchMap(() => this.videoService.getTranscodingStatus(Number(this.videoId))),
+        takeWhile(s => s !== 'COMPLETED' && s !== 'FAILED', true)
+      ).subscribe(s => {
+        this.transcodingStatus = s;
+        if (s === 'COMPLETED') {
+          this.checkAvailablePresets();
+        }
+        this.cdr.detectChanges();
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.pollingSubscription?.unsubscribe();
   }
 }

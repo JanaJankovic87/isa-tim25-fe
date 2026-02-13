@@ -27,13 +27,13 @@
         <div class="player-box">
           <video
             #videoPlayer
-            *ngIf="isVideoLoaded && getVideoUrl() !== ''"
+            *ngIf="isVideoLoaded && presetsChecked && getVideoUrl() !== ''"
             [src]="getVideoUrl()"
             controls
             autoplay
             class="player">
           </video>
-          <div *ngIf="!isVideoLoaded || getVideoUrl() === ''" class="player-placeholder">
+          <div *ngIf="!isVideoLoaded || !presetsChecked || getVideoUrl() === ''" class="player-placeholder">
             Loading video...
           </div>
         </div>

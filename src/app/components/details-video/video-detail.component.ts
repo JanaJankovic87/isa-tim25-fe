@@ -42,13 +42,15 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   recommendedVideos: Video[] = [];
 
   // Quality selector (transcoding presets)
-  availableQualities: string[] = ['720p', '480p'];
-  selectedQuality: string = '720p'; // Default quality
+  availableQualities: string[] = ['480p', '720p'];
+  selectedQuality: string = 'original'; 
   availablePresets: {[key: string]: boolean} = {
     '720p': false,
     '480p': false
   };
   transcodingInProgress: boolean = false;
+
+  presetsChecked: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -169,6 +171,9 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
         else if (presets['480p']) this.selectedQuality = '480p';
         else this.selectedQuality = 'original';
 
+       
+        this.presetsChecked = true;
+
         if (this.transcodingInProgress) {
           setTimeout(() => this.checkAvailablePresets(), 5000);
         }
@@ -177,6 +182,9 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
       },
       error: (err) => {
         console.error('Error checking presets:', err);
+   
+        this.presetsChecked = true;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -267,17 +275,20 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
 
   getVideoUrl(): string {
     if (!this.videoId) return '';
-    // If selectedQuality is 'original', return original endpoint
+
+    if (!this.presetsChecked) return '';
+    
     if (this.selectedQuality === 'original') {
       return `http://localhost:8082/api/videos/${this.videoId}/video`;
     }
-    // Koristi izabrani kvalitet (transcoded verzija)
+  
     return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
   }
 
   // Promena kvaliteta videa
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
+    if (!this.availablePresets[quality]) return; 
     this.selectedQuality = quality;
 
     // Briefly unmount and remount the video element so browser reloads stream

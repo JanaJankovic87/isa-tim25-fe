@@ -25,10 +25,40 @@
     <div class="main-content">
       <div class="video-section">
         <div class="player-box">
-          <video [src]="getVideoUrl()" controls autoplay class="player"></video>
+          <video
+            #videoPlayer
+            *ngIf="isVideoLoaded && getVideoUrl() !== ''"
+            [src]="getVideoUrl()"
+            controls
+            autoplay
+            class="player">
+          </video>
+          <div *ngIf="!isVideoLoaded || getVideoUrl() === ''" class="player-placeholder">
+            Loading video...
+          </div>
         </div>
         
         <div class="info-box">
+          <!-- Quality Selector - iznad naslova -->
+          <div class="quality-buttons">
+            <span class="quality-label">Quality:</span>
+            <button 
+              *ngFor="let q of availableQualities" 
+              class="quality-btn"
+              [class.active]="selectedQuality === q"
+              [disabled]="!availablePresets[q]"
+              [style.opacity]="availablePresets[q] ? '1' : '0.45'"
+              [title]="availablePresets[q] ? q : q + ' - processing...'"
+              (click)="availablePresets[q] && onQualityChange(q)">
+              <span>{{ q }}</span>
+              <span *ngIf="!availablePresets[q]" style="margin-left:6px;">⏳</span>
+            </button>
+
+            <span *ngIf="transcodingInProgress" style="color: orange; font-size: 12px; margin-left:10px;">
+              ⏳ Video is being processed...
+            </span>
+          </div>
+          
           <h1 class="title">{{ video.title }}</h1>
           
           <div class="video-stats" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">

@@ -1,6 +1,7 @@
 
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, NavigationEnd } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -14,11 +15,16 @@ import { filter } from 'rxjs/operators';
 @Component({
   selector: 'app-video-detail',
   standalone: true,
-  imports: [CommonModule, CommentsComponent, RouterLink],
+  imports: [CommonModule, FormsModule, CommentsComponent, RouterLink],
   templateUrl: './video-detail.component.html',
   styleUrls: ['./video-detail.component.css']
 })
 export class VideoDetailComponent implements OnInit, AfterViewInit {
+    @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
+
+    // Controls rendering of video element to avoid brief black frame while switching
+    isVideoLoaded: boolean = true;
+
     getThumbnailUrl(id?: number): string {
       if (typeof id === 'number' && !isNaN(id)) {
         return this.videoService.getThumbnailUrl(id);
@@ -34,6 +40,15 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   viewCount: number = 0;
   videoAuthor: { firstName: string, lastName: string } | null = null;
   recommendedVideos: Video[] = [];
+
+  // Quality selector (transcoding presets)
+  availableQualities: string[] = ['720p', '480p'];
+  selectedQuality: string = '720p'; // Default quality
+  availablePresets: {[key: string]: boolean} = {
+    '720p': false,
+    '480p': false
+  };
+  transcodingInProgress: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -92,6 +107,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
             this.video = data;
+              this.isVideoLoaded = true;
+              this.checkAvailablePresets();
             this.loadLikeData();
             this.handleViews();
             if (data.userId != null && data.userId != undefined) {
@@ -135,6 +152,31 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
             this.recommendedVideos = [];
           }
         });
+      }
+    });
+  }
+
+  checkAvailablePresets(): void {
+    if (!this.videoId) return;
+    this.videoService.getAvailablePresets(Number(this.videoId)).subscribe({
+      next: (presets) => {
+        this.availablePresets = presets;
+
+        const anyAvailable = Object.values(presets).some(v => v === true);
+        this.transcodingInProgress = !anyAvailable;
+
+        if (presets['720p']) this.selectedQuality = '720p';
+        else if (presets['480p']) this.selectedQuality = '480p';
+        else this.selectedQuality = 'original';
+
+        if (this.transcodingInProgress) {
+          setTimeout(() => this.checkAvailablePresets(), 5000);
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error checking presets:', err);
       }
     });
   }
@@ -224,7 +266,33 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   }
 
   getVideoUrl(): string {
-    return `http://localhost:8082/api/videos/${this.videoId}/video`;
+    if (!this.videoId) return '';
+    // If selectedQuality is 'original', return original endpoint
+    if (this.selectedQuality === 'original') {
+      return `http://localhost:8082/api/videos/${this.videoId}/video`;
+    }
+    // Koristi izabrani kvalitet (transcoded verzija)
+    return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+  }
+
+  // Promena kvaliteta videa
+  onQualityChange(quality: string): void {
+    if (this.selectedQuality === quality) return;
+    this.selectedQuality = quality;
+
+    // Briefly unmount and remount the video element so browser reloads stream
+    this.isVideoLoaded = false;
+    setTimeout(() => {
+      this.isVideoLoaded = true;
+      this.cdr.detectChanges();
+      try {
+        this.videoPlayer?.nativeElement.pause();
+        this.videoPlayer?.nativeElement.load();
+        this.videoPlayer?.nativeElement.play().catch(() => {});
+      } catch (e) {
+        // ignore
+      }
+    }, 80);
   }
 
   getCurrentUserId(): number | null {

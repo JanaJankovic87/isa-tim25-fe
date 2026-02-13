@@ -53,7 +53,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   presetsChecked: boolean = false;
 
-  // Transcoding status polling
+
   transcodingStatus: string = 'PENDING';
   private pollingSubscription?: Subscription;
 
@@ -300,7 +300,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   // Promena kvaliteta videa
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
-    // Original je uvek dostupan, ostali samo ako su transkodovani
+ 
     if (quality !== 'original' && !this.availablePresets[quality]) return; 
     this.selectedQuality = quality;
 
@@ -446,12 +446,12 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   startTranscodingPolling(): void {
     if (!this.videoId) return;
     
-    // Prvo proveri trenutni status
+   
     this.videoService.getTranscodingStatus(Number(this.videoId)).subscribe(status => {
       this.transcodingStatus = status;
       this.cdr.detectChanges();
       
-      // Ako je COMPLETED ili FAILED, ne pokreći polling
+    
       if (status === 'COMPLETED' || status === 'FAILED') {
         if (status === 'COMPLETED') {
           this.checkAvailablePresets();
@@ -459,7 +459,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       
-      // Inače pokreni polling svakih 10 sekundi
+      
       this.pollingSubscription = interval(10000).pipe(
         switchMap(() => this.videoService.getTranscodingStatus(Number(this.videoId))),
         takeWhile(s => s !== 'COMPLETED' && s !== 'FAILED', true)

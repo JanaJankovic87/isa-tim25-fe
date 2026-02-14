@@ -1,6 +1,7 @@
 
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, NavigationEnd } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -9,16 +10,22 @@ import { Video } from '../../models/video.model';
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { CommentsComponent } from '../comments/comments.component';
-import { filter } from 'rxjs/operators';
+import { filter, switchMap, takeWhile } from 'rxjs/operators';
+import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-video-detail',
   standalone: true,
-  imports: [CommonModule, CommentsComponent, RouterLink],
+  imports: [CommonModule, FormsModule, CommentsComponent, RouterLink],
   templateUrl: './video-detail.component.html',
   styleUrls: ['./video-detail.component.css']
 })
-export class VideoDetailComponent implements OnInit, AfterViewInit {
+export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
+    @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
+
+    // Controls rendering of video element to avoid brief black frame while switching
+    isVideoLoaded: boolean = true;
+
     getThumbnailUrl(id?: number): string {
       if (typeof id === 'number' && !isNaN(id)) {
         return this.videoService.getThumbnailUrl(id);
@@ -34,6 +41,21 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   viewCount: number = 0;
   videoAuthor: { firstName: string, lastName: string } | null = null;
   recommendedVideos: Video[] = [];
+
+  // Quality selector (transcoding presets)
+  availableQualities: string[] = ['480p', '720p'];
+  selectedQuality: string = 'original'; 
+  availablePresets: {[key: string]: boolean} = {
+    '720p': false,
+    '480p': false
+  };
+  transcodingInProgress: boolean = false;
+
+  presetsChecked: boolean = false;
+
+
+  transcodingStatus: string = 'PENDING';
+  private pollingSubscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -92,6 +114,9 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
             this.video = data;
+              this.isVideoLoaded = true;
+              this.checkAvailablePresets();
+              this.startTranscodingPolling();
             this.loadLikeData();
             this.handleViews();
             if (data.userId != null && data.userId != undefined) {
@@ -135,6 +160,36 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
             this.recommendedVideos = [];
           }
         });
+      }
+    });
+  }
+
+  checkAvailablePresets(): void {
+    if (!this.videoId) return;
+    this.videoService.getAvailablePresets(Number(this.videoId)).subscribe({
+      next: (presets) => {
+        this.availablePresets = presets;
+
+        const anyAvailable = Object.values(presets).some(v => v === true);
+        this.transcodingInProgress = !anyAvailable;
+
+        // Always default to original
+        this.selectedQuality = 'original';
+
+       
+        this.presetsChecked = true;
+
+        if (this.transcodingInProgress) {
+          setTimeout(() => this.checkAvailablePresets(), 5000);
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error checking presets:', err);
+   
+        this.presetsChecked = true;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -224,7 +279,44 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
   }
 
   getVideoUrl(): string {
-    return `http://localhost:8082/api/videos/${this.videoId}/video`;
+    if (!this.videoId) return '';
+
+    if (!this.presetsChecked) return '';
+    
+    if (this.selectedQuality === 'original') {
+      return `http://localhost:8082/api/videos/${this.videoId}/video`;
+    }
+  
+    return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+  }
+
+  getQualityLabel(): string {
+    if (this.selectedQuality === 'original') {
+      return 'Original';
+    }
+    return this.selectedQuality;
+  }
+
+  // Promena kvaliteta videa
+  onQualityChange(quality: string): void {
+    if (this.selectedQuality === quality) return;
+ 
+    if (quality !== 'original' && !this.availablePresets[quality]) return; 
+    this.selectedQuality = quality;
+
+    // Briefly unmount and remount the video element so browser reloads stream
+    this.isVideoLoaded = false;
+    setTimeout(() => {
+      this.isVideoLoaded = true;
+      this.cdr.detectChanges();
+      try {
+        this.videoPlayer?.nativeElement.pause();
+        this.videoPlayer?.nativeElement.load();
+        this.videoPlayer?.nativeElement.play().catch(() => {});
+      } catch (e) {
+        // ignore
+      }
+    }, 80);
   }
 
   getCurrentUserId(): number | null {
@@ -349,5 +441,39 @@ export class VideoDetailComponent implements OnInit, AfterViewInit {
           console.error('Error loading video author:', err);
         }
       });
+  }
+
+  startTranscodingPolling(): void {
+    if (!this.videoId) return;
+    
+   
+    this.videoService.getTranscodingStatus(Number(this.videoId)).subscribe(status => {
+      this.transcodingStatus = status;
+      this.cdr.detectChanges();
+      
+    
+      if (status === 'COMPLETED' || status === 'FAILED') {
+        if (status === 'COMPLETED') {
+          this.checkAvailablePresets();
+        }
+        return;
+      }
+      
+      
+      this.pollingSubscription = interval(10000).pipe(
+        switchMap(() => this.videoService.getTranscodingStatus(Number(this.videoId))),
+        takeWhile(s => s !== 'COMPLETED' && s !== 'FAILED', true)
+      ).subscribe(s => {
+        this.transcodingStatus = s;
+        if (s === 'COMPLETED') {
+          this.checkAvailablePresets();
+        }
+        this.cdr.detectChanges();
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.pollingSubscription?.unsubscribe();
   }
 }

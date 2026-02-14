@@ -387,7 +387,7 @@ export class HomeComponent implements OnInit {
               const video = item.video;
               const score = item.trendingScore || 0;
               
-              console.log('Processing video:', {
+              console.log(' video:', {
                 id: video.id,
                 title: video.title,
                 score: score

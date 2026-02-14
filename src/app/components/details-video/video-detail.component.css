@@ -1,3 +1,97 @@
+/* Quality Buttons Styles */
+.quality-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.quality-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-right: 4px;
+}
+
+.quality-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 2px solid #e0e0e0;
+  color: #666;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.quality-btn:hover {
+  border-color: #d1708f;
+  color: #d1708f;
+  background: rgba(209, 112, 143, 0.05);
+}
+
+.quality-btn.active {
+  background: linear-gradient(135deg, #d1708f 0%, #c95d84 100%);
+  border-color: #d1708f;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(209, 112, 143, 0.3);
+}
+
+.quality-btn.active:hover {
+  background: linear-gradient(135deg, #c95d84 0%, #b8507a 100%);
+  color: #fff;
+}
+
+.quality-btn.disabled-processing {
+  background: rgba(200, 200, 200, 0.3);
+  border: 2px dashed #ccc;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.quality-btn svg {
+  flex-shrink: 0;
+}
+
+.transcoding-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.transcoding-status.processing {
+  color: #e67e22;
+  background: rgba(230, 126, 34, 0.1);
+}
+
+.transcoding-status.pending {
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.transcoding-status.failed {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.quality-status {
+  margin-left: auto;
+  background: linear-gradient(135deg, #d1708f 0%, #c95d84 100%);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .sidebar-title {
   font-size: 16px;
   font-weight: 700;

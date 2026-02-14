@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpEventType, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Video, TrendingVideoDTO } from '../models/video.model';
 import { AuthService } from './auth.service';
@@ -188,6 +188,24 @@ export class VideoService {
 
   getVideoUrl(id: number): string {
     return `${this.apiUrl}/${id}/video`;
+  }
+
+  // Dobijanje URL-a za video sa određenim kvalitetom (preset)
+  getVideoUrlByPreset(id: number, preset: string): string {
+    return `${this.apiUrl}/${id}/video/${preset}`;
+  }
+
+  getAvailablePresets(id: number): Observable<{[key: string]: boolean}> {
+    return this.http.get<{[key: string]: boolean}>(`${this.apiUrl}/${id}/presets`).pipe(
+      catchError(() => of({'720p': false, '480p': false}))
+    );
+  }
+
+  getTranscodingStatus(videoId: number): Observable<string> {
+    return this.http.get<{status: string}>(`${this.apiUrl}/${videoId}/transcoding-status`).pipe(
+      map(r => r.status),
+      catchError(() => of('PENDING'))
+    );
   }
 
   recordView(id: number, lat?: number | null, lng?: number | null): Observable<any> {

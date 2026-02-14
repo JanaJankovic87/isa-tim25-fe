@@ -25,10 +25,59 @@
     <div class="main-content">
       <div class="video-section">
         <div class="player-box">
-          <video [src]="getVideoUrl()" controls autoplay class="player"></video>
+          <video
+            #videoPlayer
+            *ngIf="isVideoLoaded && presetsChecked && getVideoUrl() !== ''"
+            [src]="getVideoUrl()"
+            controls
+            autoplay
+            class="player">
+          </video>
+          <div *ngIf="!isVideoLoaded || !presetsChecked || getVideoUrl() === ''" class="player-placeholder">
+            Loading video...
+          </div>
         </div>
         
         <div class="info-box">
+          <!-- Quality Selector - iznad naslova -->
+          <div class="quality-buttons" *ngIf="presetsChecked">
+            <span class="quality-label">Quality:</span>
+            
+            <!-- Original dugme - uvek dostupno -->
+            <button 
+              class="quality-btn"
+              [class.active]="selectedQuality === 'original'"
+              (click)="onQualityChange('original')">
+              <span>Original</span>
+            </button>
+
+            <!-- Prikazuj dugmiće za presete - aktivni ako su dostupni, zamagljeni ako se procesiraju -->
+            <ng-container *ngFor="let q of availableQualities">
+              <!-- Ako je preset dostupan - normalno dugme -->
+              <button 
+                *ngIf="availablePresets[q]"
+                class="quality-btn"
+                [class.active]="selectedQuality === q"
+                (click)="onQualityChange(q)">
+                <span>{{ q }}</span>
+              </button>
+              
+              <!-- Ako preset nije dostupan i transkodovanje je u toku - zamagljeno dugme sa tooltip-om -->
+              <button 
+                *ngIf="!availablePresets[q] && (transcodingStatus === 'PROCESSING' || transcodingStatus === 'PENDING')"
+                class="quality-btn disabled-processing"
+                title="Processing"
+                disabled>
+                <span>{{ q }}</span>
+              </button>
+            </ng-container>
+
+            <!-- FAILED poruka -->
+            <span *ngIf="transcodingStatus === 'FAILED'" class="transcoding-status failed">
+              ⚠️ Transcoding failed
+            </span>
+          </div>
+          
           <h1 class="title">{{ video.title }}</h1>
           
           <div class="video-stats" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">

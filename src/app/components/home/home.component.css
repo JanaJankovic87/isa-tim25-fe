@@ -855,3 +855,48 @@
     right: 8px;
   }
 }
+
+.hamburger-menu-btn:focus {
+  outline-offset: 2px;
+}
+
+.hamburger-dropdown {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hamburger-dropdown .menu-option:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.hamburger-dropdown .menu-option:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.hamburger-dropdown .menu-option.active {
+  font-weight: 600;
+  color: #0066cc;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  
+  .radius-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

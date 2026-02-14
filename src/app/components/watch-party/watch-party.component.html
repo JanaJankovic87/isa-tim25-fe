@@ -1,0 +1,156 @@
+<div class="watch-party-page">
+  <div class="container">
+    <h1 class="page-title">
+      
+      Watch Party
+    </h1>
+    <p class="subtitle">Gledajte video zajedno sa prijateljima u realnom vremenu</p>
+
+
+    <div *ngIf="!isConnected" class="setup-section">
+      
+    
+      <div class="mode-toggle">
+        <button 
+          class="toggle-btn" 
+          [class.active]="showCreateMode"
+          (click)="showCreateMode = true">
+          Kreiraj sobu
+        </button>
+        <button 
+          class="toggle-btn" 
+          [class.active]="!showCreateMode"
+          (click)="showCreateMode = false">
+          Pridruži se
+        </button>
+      </div>
+
+      <!-- create room -->
+      <div *ngIf="showCreateMode" class="mode-content create-mode">
+        <div class="info-card">
+          <h3> Kreiraj Watch Party</h3>
+          <p>Kreirajte novu sobu i podelite link sa prijateljima. Vi kontrolišete koji video se pušta.</p>
+          
+          <button 
+            class="primary-btn" 
+            (click)="createRoom()"
+            [disabled]="isLoading">
+            <span *ngIf="!isLoading">Kreiraj sobu</span>
+            <span *ngIf="isLoading">Kreiranje...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- join room  -->
+      <div *ngIf="!showCreateMode" class="mode-content join-mode">
+        <div class="info-card">
+          <h3> Pridruži se Watch Party-ju</h3>
+          <p>Unesite ID sobe koju ste dobili od prijatelja.</p>
+          
+          <div class="input-group">
+            <input 
+              type="text" 
+              [(ngModel)]="joinRoomId"
+              placeholder="npr. WP-ABC123"
+              class="room-input"
+              (keyup.enter)="joinRoom()">
+            <button 
+              class="primary-btn" 
+              (click)="joinRoom()"
+              [disabled]="isLoading || !joinRoomId.trim()">
+              <span *ngIf="!isLoading">Pridruži se</span>
+              <span *ngIf="isLoading">Povezivanje...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+     
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+    </div>
+
+
+    <div *ngIf="isConnected" class="room-section">
+      
+      <!--header-->
+      <div class="room-header">
+        <div class="room-info">
+          <span class="room-label">Soba:</span>
+          <span class="room-id">{{ roomId }}</span>
+          <span class="role-badge" [class.owner]="isOwner">
+            {{ isOwner ? 'Vlasnik' : 'Član' }}
+          </span>
+        </div>
+        <div class="room-actions">
+          <button *ngIf="isOwner" class="copy-btn" (click)="copyLink()" title="Kopiraj link">
+             Kopiraj link
+          </button>
+          <button class="leave-btn" (click)="leaveRoom()">
+             Napusti
+          </button>
+        </div>
+      </div>
+
+      <!-- owner video selection -->
+      <div *ngIf="isOwner" class="video-selection">
+        <h3>Izaberite video za pokretanje:</h3>
+        
+        <div class="video-grid">
+          <div 
+            *ngFor="let video of videos" 
+            class="video-card"
+            [class.selected]="selectedVideoId === video.id"
+            (click)="selectedVideoId = video.id ?? null">
+            <div class="video-thumb">
+              <img 
+                [src]="getThumbnailUrl(video.id)" 
+                [alt]="video.title"
+                (error)="$event.target.src='https://via.placeholder.com/120x68?text=No+Thumbnail'">
+              <div class="check-overlay" *ngIf="selectedVideoId === video.id">✓</div>
+            </div>
+            <div class="video-title">{{ video.title }}</div>
+          </div>
+        </div>
+
+        <span class="tooltip-wrapper" [title]="isOwner && memberCount === 0 ? 'Čeka se da se pridruži makar jedan član' : ''">
+          <button 
+            class="play-btn" 
+            (click)="playVideo()"
+            [disabled]="!selectedVideoId || (isOwner && memberCount === 0)">
+             Pokreni video za sve
+          </button>
+        </span>
+      </div>
+
+      <div *ngIf="!isOwner" class="waiting-section">
+        <h3>Čekanje na vlasnika sobe</h3>
+        <p>Kada vlasnik pokrene video, automatski ćete biti preusmerni na njega.</p>
+      </div>
+
+      
+      <div class="messages-section">
+        <h4>Aktivnost</h4>
+        <div class="messages-container">
+          <div *ngFor="let msg of messages" class="message">
+            {{ msg }}
+          </div>
+          <div *ngIf="messages.length === 0" class="no-messages">
+            Nema aktivnosti
+          </div>
+        </div>
+      </div>
+
+
+      <div *ngIf="error" class="error-message">
+         {{ error }}
+      </div>
+    </div>
+
+    <!-- back  -->
+    <div class="back-link">
+      <a routerLink="/home">← Nazad na početnu</a>
+    </div>
+  </div>
+</div>

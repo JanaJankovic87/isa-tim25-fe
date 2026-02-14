@@ -228,6 +228,29 @@
   align-items: center;
 }
 
+.watch-party-btn {
+  display: flex;
+  align-items: center;
+  font-family: Ubuntu, sans-serif;
+  gap: 6px;
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.watch-party-btn:hover {
+  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+}
+
 .add-video-btn {
   display: flex;
   align-items: center;

@@ -43,5 +43,11 @@ export const routes: Routes = [
     path: 'performance',
     loadComponent: () => import('./components/performance-dashboard/performance-dashboard.component')
       .then(m => m.PerformanceDashboardComponent)
+  },
+  {
+    path: 'watch-party',
+    loadComponent: () => import('./components/watch-party/watch-party.component')
+      .then(m => m.WatchPartyComponent),
+    canActivate: [authGuard]
   }
 ];

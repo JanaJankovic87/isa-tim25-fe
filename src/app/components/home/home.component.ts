@@ -8,6 +8,7 @@ import { VideoService } from '../../services/video.service';
 import { Video } from '../../models/video.model';
 import { LocalTrendingService, TrendingResult } from '../../services/local-trending.service';
 import { TrendingVideoDTO } from '../../models/video.model';
+import { PopularityService, VideoPopularityDTO } from '../../services/popularity.service';
 
 @Component({
   selector: 'app-home',
@@ -17,19 +18,24 @@ import { TrendingVideoDTO } from '../../models/video.model';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-    // Control which section is shown: 'trending' | 'local'
-    activeSection: 'trending' | 'local' = 'trending';
+    // Control which section is shown: 'near-you' | 'popular'
+    activeSection: 'near-you' | 'popular' = 'near-you';
+    showHamburgerMenu = false;
   videos: Video[] = [];
   trendingVideos: TrendingVideoDTO[] = [];
   currentTrendingIndex = 0;
   
-  // LOCAL TRENDING (NOVO)
   localTrendingVideos: any[] = [];
   currentLocalTrendingIndex = 0;
   localTrendingLoading = false;
   localTrendingError: string | null = null;
   isLocationApproximated = false;
   radiusKm = 50;
+  
+  popularVideos: VideoPopularityDTO[] = [];
+  currentPopularIndex = 0;
+  popularLoading = false;
+  popularError: string | null = null;
   
   isLoading = true;
   videoDurations: { [id: number]: string } = {};
@@ -46,25 +52,36 @@ export class HomeComponent implements OnInit {
     public authService: AuthService,
     private videoService: VideoService,
     private localTrendingService: LocalTrendingService,
+    private popularityService: PopularityService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.activeSection = 'trending'; 
+    this.activeSection = 'near-you'; 
     this.loadTags();
     this.loadVideos();
     this.loadTrendingVideos();
     this.loadLocalTrendingVideos();
+    this.loadPopularVideos();
     this.checkSessionExpired();
   }
 
-  showTrendingOnly(): void {
-    this.activeSection = 'trending';
+  toggleHamburgerMenu(): void {
+    this.showHamburgerMenu = !this.showHamburgerMenu;
   }
 
-  showLocalTrending(): void {
-    this.activeSection = 'local';
+  selectSection(section: 'near-you' | 'popular'): void {
+    this.activeSection = section;
+    this.showHamburgerMenu = false;
+  }
+
+  showNearYou(): void {
+    this.activeSection = 'near-you';
+  }
+
+  showPopular(): void {
+    this.activeSection = 'popular';
   }
 
   checkSessionExpired(): void {
@@ -347,6 +364,9 @@ export class HomeComponent implements OnInit {
     if (!target.closest('.profile-dropdown')) {
       this.showProfileMenu = false;
     }
+    if (!target.closest('.hamburger-menu-btn') && !target.closest('.hamburger-dropdown')) {
+      this.showHamburgerMenu = false;
+    }
   }
 
   formatDate(date: Date | undefined): string {
@@ -504,6 +524,76 @@ export class HomeComponent implements OnInit {
   }
 
   viewLocalTrendingVideo(id: number): void {
+    if (!id) {
+      console.error('Invalid video ID:', id);
+      return;
+    }
+    this.router.navigate(['/video', id]);
+  }
+
+  loadPopularVideos(): void {
+    this.popularLoading = true;
+    this.popularError = null;
+
+    this.popularityService.getTopVideos().subscribe({
+      next: (response: any) => {
+        console.log('=== POPULAR VIDEOS RESPONSE ===', response);
+        
+        // Check if response is an object with a message (no videos available)
+        if (response && response.message && !Array.isArray(response)) {
+          console.log('No videos available - showing message');
+          this.popularVideos = [];
+          this.popularError = 'No activity this week';
+          this.popularLoading = false;
+          this.cdr.detectChanges();
+          return;
+        }
+        
+        // Check if response is an array
+        if (Array.isArray(response)) {
+          console.log('Videos received:', response.length);
+          this.popularVideos = response;
+          
+          // If array is empty, show message
+          if (response.length === 0) {
+            this.popularError = 'No activity this week';
+          }
+        } else {
+          // Unexpected response format
+          console.warn('Unexpected response format:', response);
+          this.popularVideos = [];
+          this.popularError = 'No activity this week';
+        }
+        
+        this.popularLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('=== POPULAR VIDEOS ERROR ===', err);
+        this.popularError = 'No activity this week';
+        this.popularLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  nextPopular(): void {
+    if (this.currentPopularIndex < this.popularVideos.length - 1) {
+      this.currentPopularIndex++;
+    }
+  }
+
+  prevPopular(): void {
+    if (this.currentPopularIndex > 0) {
+      this.currentPopularIndex--;
+    }
+  }
+
+  goToPopularSlide(index: number): void {
+    this.currentPopularIndex = index;
+  }
+
+  viewPopularVideo(id: number): void {
     if (!id) {
       console.error('Invalid video ID:', id);
       return;

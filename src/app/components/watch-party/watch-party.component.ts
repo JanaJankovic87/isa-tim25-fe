@@ -66,7 +66,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     this.loadVideos();
 
     this.subscriptions.push(
-      this.watchPartyService.messages$.subscribe(msg => {
+      this.watchPartyService.messages$.subscribe((msg: string) => {
         this.messages.push(msg);
         
         try {
@@ -98,7 +98,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.push(
-      this.watchPartyService.connectionStatus$.subscribe(status => {
+      this.watchPartyService.connectionStatus$.subscribe((status: boolean) => {
         this.ngZone.run(() => {
           this.isConnected = status;
           console.log('Connection status changed:', status);
@@ -150,7 +150,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
       next: (videos) => {
         this.videos = videos;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading videos:', err);
       }
     });
@@ -193,7 +193,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
               this.cdr.detectChanges();
             });
           })
-          .catch(err => {
+          .catch((err: any) => {
             this.ngZone.run(() => {
               this.error = 'Greška pri konekciji na WebSocket.';
               this.isLoading = false;
@@ -202,7 +202,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
             });
           });
       },
-      error: (err) => {
+      error: (err: any) => {
         this.ngZone.run(() => {
           this.error = 'Greška pri kreiranju sobe.';
           this.isLoading = false;
@@ -222,7 +222,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
 
     this.isLoading = true;
     this.error = '';
-    this.roomId = this.joinRoomId.trim().toUpperCase();
+    this.roomId = this.joinRoomId.trim();
 
     this.watchPartyService.connect(this.roomId, this.currentUserId, false)
       .then(() => {
@@ -236,7 +236,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         });
       })
-      .catch(err => {
+      .catch((err: any) => {
         this.ngZone.run(() => {
           this.error = 'Greska pri pridruzivanju sobi. Proverite ID i pokusajte ponovo.';
           this.isLoading = false;
@@ -299,7 +299,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     const link = `${window.location.origin}/watch-party?room=${this.roomId}`;
     navigator.clipboard.writeText(link).then(() => {
       this.messages.push('Link kopiran u clipboard!');
-    }).catch(err => {
+    }).catch((err: any) => {
       console.error('Failed to copy:', err);
     });
   }

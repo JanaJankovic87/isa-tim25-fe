@@ -5,19 +5,15 @@ import { WatchPartyService as CoreWatchPartyService, WatchPartyCommand } from '.
 export class WatchPartyWrapperService {
   constructor(private core: CoreWatchPartyService) {}
 
-  // Compatibility method names
   createRoom(roomId: string, userId: string) {
-    // creating a room is modeled by connecting as owner
     return this.core.connect(roomId, userId, true);
   }
 
   getAllRooms(): Promise<string[]> {
-    // No backend endpoint in frontend; return empty list placeholder
     return Promise.resolve([]);
   }
 
   getRoom(roomId: string): Promise<any> {
-    // Placeholder: frontend doesn't maintain full room info
     return Promise.resolve(null);
   }
 
@@ -26,7 +22,6 @@ export class WatchPartyWrapperService {
   }
 
   closeRoom() {
-    // close room -> disconnect
     return this.core.disconnect();
   }
 
@@ -38,12 +33,10 @@ export class WatchPartyWrapperService {
     return this.core.disconnect();
   }
 
-  // expose events observable
   get events$() {
     return (this.core as any).events$;
   }
 
-  // expose messages and commands as needed
   get commands$() { return (this.core as any).commands$; }
   get messages$() { return (this.core as any).messages$; }
 }

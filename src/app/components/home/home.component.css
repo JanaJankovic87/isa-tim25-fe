@@ -233,7 +233,7 @@
   align-items: center;
   font-family: Ubuntu, sans-serif;
   gap: 6px;
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  background: linear-gradient(135deg, #d1708f 0%, #c95d84 100%);
   border: none;
   color: white;
   padding: 8px 16px;
@@ -246,9 +246,9 @@
 }
 
 .watch-party-btn:hover {
-  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+  background: linear-gradient(135deg, #c95d84 0%, #b8507a 100%);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+  box-shadow: 0 2px 8px rgba(209, 112, 143, 0.4);
 }
 
 .add-video-btn {

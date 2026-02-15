@@ -110,8 +110,24 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
       if (params['room']) {
         this.joinRoomId = params['room'];
         this.showCreateMode = false;
+      } else {
+        this.resetView();
       }
     });
+  }
+
+  private resetView(): void {
+    this.roomId = '';
+    this.joinRoomId = '';
+    this.isConnected = false;
+    this.isOwner = false;
+    this.messages = [];
+    this.selectedVideoId = null;
+    this.memberCount = 0;
+    this.isLoading = false;
+    this.error = '';
+    this.showCreateMode = true;
+    try { this.cdr.detectChanges(); } catch (e) {}
   }
 
   ngOnDestroy(): void {
@@ -225,12 +241,19 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
   
   leaveRoom(): void {
     this.watchPartyService.disconnect();
-    this.roomId = '';
-    this.joinRoomId = '';
-    this.isOwner = false;
-    this.messages = [];
-    this.selectedVideoId = null;
-    this.error = '';
+    const prevRoom = this.roomId;
+    this.watchPartyService.disconnect();
+    this.resetView();
+    this.showCreateMode = true;
+   
+    try {
+      if (prevRoom) {
+        localStorage.removeItem(`wp_owner_${prevRoom}`);
+      }
+      localStorage.removeItem('wp_last_room');
+    } catch (e) {}
+ 
+    try { this.router.navigate(['/watch-party']); } catch (e) {}
   }
 
  
@@ -241,6 +264,11 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     }).catch(err => {
       console.error('Failed to copy:', err);
     });
+  }
+
+ 
+  public goHome(): void {
+    this.router.navigate(['/home']);
   }
 
 

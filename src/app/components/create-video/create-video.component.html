@@ -104,13 +104,49 @@
           </button>
         </div>
       </div>
+
+      <!-- SCHEDULED STREAMING SECTION -->
+      <div class="field">
+        <div class="scheduled-header">
+          <label>Schedule Video (Optional)</label>
+          <label class="toggle-switch">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="isScheduled" 
+              [ngModelOptions]="{standalone: true}"
+              (change)="toggleScheduled()"
+              [disabled]="isUploading"
+            >
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div *ngIf="isScheduled" class="scheduled-info">
+          <p class="info-text">
+            📅 Your video will be available at the scheduled time. All viewers will watch it synchronously starting from the scheduled time.
+          </p>
+          <div class="datetime-wrapper">
+            <label for="scheduledTime">Choose Date & Time:</label>
+            <input 
+              type="datetime-local" 
+              id="scheduledTime"
+              formControlName="scheduledTime"
+              [min]="minDateTime"
+              [disabled]="isUploading"
+            >
+          </div>
+          <div *ngIf="isScheduled && !videoForm.get('scheduledTime')?.value" style="color: #ff4444; font-size: 12px; margin-top: 4px;">
+            Please select a scheduled time
+          </div>
+        </div>
+      </div>
    
       <div class="buttons">
         <button type="button" (click)="onCancel()" [disabled]="isUploading" class="btn-cancel">
           Cancel
         </button>
         <button type="submit" [disabled]="isUploading" class="btn-submit">
-          {{ isUploading ? '⏳ Uploading...' : 'Publish Video' }}
+          {{ isUploading ? '⏳ Uploading...' : (isScheduled ? '📅 Schedule Video' : 'Publish Video') }}
         </button>
       </div>
     </form>

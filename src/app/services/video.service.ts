@@ -23,11 +23,12 @@ export class VideoService {
     longitude: number | null,
     thumbnail: File,
     video: File,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    scheduledTime?: string | null
   ): Observable<any> {
     const formData = new FormData();
     
-    const dto = {
+    const dto: any = {
       title: title,
       description: description,
       tags: tags,
@@ -36,6 +37,11 @@ export class VideoService {
       longitude: longitude,
       isLocationApproximated: true // jer koristimo geocoding, nije tačna GPS lokacija
     };
+    
+    if (scheduledTime) {
+      dto.scheduledTime = scheduledTime;
+      dto.isScheduled = true;
+    }
     
     formData.append('data', JSON.stringify(dto));
     formData.append('thumbnail', thumbnail, thumbnail.name);
@@ -243,6 +249,24 @@ export class VideoService {
     return this.http.get<TrendingVideoDTO[]>(`${this.apiUrl}/trending`).pipe(
       catchError(error => {
         console.error('Get trending videos error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getVideoAvailability(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/availability`).pipe(
+      catchError(error => {
+        console.error('Get video availability error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getPlaybackState(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/playback-state`).pipe(
+      catchError(error => {
+        console.error('Get playback state error:', error);
         return throwError(() => error);
       })
     );

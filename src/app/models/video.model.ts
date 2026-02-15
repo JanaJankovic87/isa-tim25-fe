@@ -12,6 +12,25 @@ export interface Video {
   likedByCurrentUser?: boolean;
   version?: number;
   viewsCount?: number;
+  scheduledTime?: Date;
+  isScheduled?: boolean;
+  videoDurationSeconds?: number;
+}
+
+export interface VideoPlaybackState {
+  videoId: number;
+  scheduledTime: Date;
+  videoDurationSeconds: number;
+  currentSecond: number;
+  isLive: boolean;
+  hasEnded: boolean;
+}
+
+export interface VideoAvailability {
+  isAvailable: boolean;
+  isScheduled: boolean;
+  scheduledTime?: Date;
+  message?: string;
 }
 
 export interface TrendingVideoDTO {

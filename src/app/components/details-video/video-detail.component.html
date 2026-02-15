@@ -24,17 +24,47 @@
     <!-- MAIN CONTENT - LEVO -->
     <div class="main-content">
       <div class="video-section">
-        <div class="player-box">
+        
+        <div *ngIf="isScheduledVideo && !isVideoAvailable" class="scheduled-overlay">
+          <div class="scheduled-content">
+            <div class="scheduled-icon">📅</div>
+            <h2>Scheduled Stream</h2>
+            <p class="scheduled-message">This video will be available at:</p>
+            <p class="scheduled-time">{{ formatScheduledTime(scheduledTime) }}</p>
+            <div class="countdown">
+              <span class="countdown-label">Starts in:</span>
+              <span class="countdown-time">{{ countdownText }}</span>
+            </div>
+            <p class="info-note">
+              ⏰ All viewers will watch this video synchronously starting from the scheduled time.
+            </p>
+          </div>
+        </div>
+
+        <!-- Video Player (shown when available) -->
+        <div class="player-box" *ngIf="!isScheduledVideo || isVideoAvailable">
+          
           <video
             #videoPlayer
-            *ngIf="isVideoLoaded && presetsChecked && getVideoUrl() !== ''"
+            *ngIf="isVideoLoaded && getVideoUrl() !== ''"
             [src]="getVideoUrl()"
             controls
-            autoplay
-            class="player">
+            class="player"
+            (error)="onVideoError($event)"
+            (seeking)="onVideoSeeking($event)"
+            (seeked)="onVideoSeeked($event)">
           </video>
-          <div *ngIf="!isVideoLoaded || !presetsChecked || getVideoUrl() === ''" class="player-placeholder">
+          <div *ngIf="!isVideoLoaded || getVideoUrl() === ''" class="player-placeholder">
             Loading video...
+          </div>
+          
+          <div *ngIf="isScheduledVideo && isVideoAvailable && playbackState?.isLive" class="live-indicator">
+            <span class="live-dot"></span>
+            LIVE
+          </div>
+          
+          <div *ngIf="isScheduledVideo && playbackState?.isLive && !playbackState?.hasEnded" class="no-seek-warning">
+            ⚠️ Live stream - seeking disabled
           </div>
         </div>
         

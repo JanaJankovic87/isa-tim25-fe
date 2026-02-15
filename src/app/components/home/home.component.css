@@ -377,6 +377,27 @@
   font-weight: 500;
 }
 
+.scheduled-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+.scheduled-badge svg {
+  flex-shrink: 0;
+}
+
 .video-info {
   padding: 0 12px;
 }

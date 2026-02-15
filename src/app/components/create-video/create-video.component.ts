@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { VideoService } from '../../services/video.service';
 import { GeocodingService } from '../../services/geocoding.service';
@@ -8,7 +8,7 @@ import { GeocodingService } from '../../services/geocoding.service';
 @Component({
   selector: 'app-create-video',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './create-video.component.html',
   styleUrls: ['./create-video.component.css']
 })
@@ -30,6 +30,10 @@ export class CreateVideoComponent implements OnInit {
   longitude: number | null = null;
   locationName: string | null = null;
   
+  // Scheduled streaming
+  isScheduled = false;
+  minDateTime: string = '';
+  
   readonly MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB
 
   constructor(
@@ -44,14 +48,39 @@ export class CreateVideoComponent implements OnInit {
   ngOnInit(): void {
     // Automatically get user's location when component loads
     this.loadUserLocation();
+    // Set minimum datetime to current time
+    this.setMinDateTime();
   }
 
   initForm(): void {
     this.videoForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
-      location: ['', [Validators.maxLength(255)]]
+      location: ['', [Validators.maxLength(255)]],
+      scheduledTime: ['']
     });
+  }
+
+  setMinDateTime(): void {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 5); // Minimum 5 minutes from now
+    this.minDateTime = this.formatDateTimeLocal(now);
+  }
+
+  formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  toggleScheduled(): void {
+    this.isScheduled = !this.isScheduled;
+    if (!this.isScheduled) {
+      this.videoForm.patchValue({ scheduledTime: '' });
+    }
   }
 
   /**
@@ -206,12 +235,30 @@ export class CreateVideoComponent implements OnInit {
       return;
     }
 
+    // Validate scheduled time if scheduled
+    if (this.isScheduled) {
+      const scheduledTime = this.videoForm.value.scheduledTime;
+      if (!scheduledTime) {
+        this.errorMessage = 'Please select a scheduled time';
+        return;
+      }
+      const scheduledDate = new Date(scheduledTime);
+      const now = new Date();
+      if (scheduledDate <= now) {
+        this.errorMessage = 'Scheduled time must be in the future';
+        return;
+      }
+    }
+
     this.isUploading = true;
     this.uploadProgress = 0;
     this.errorMessage = '';
 
     // Get location from form or use auto-detected location
     const location = this.videoForm.value.location || this.locationName;
+    
+    // Get scheduled time if scheduled
+    const scheduledTime = this.isScheduled ? this.videoForm.value.scheduledTime : null;
 
     this.videoService.createVideo(
       this.videoForm.value.title,
@@ -224,12 +271,16 @@ export class CreateVideoComponent implements OnInit {
       this.videoFile,
       (progress: number) => {
         this.uploadProgress = progress;
-      }
+      },
+      scheduledTime
     ).subscribe({
       next: (response) => {
         if (response) {
           console.log('Video created:', response);
-          alert('Video successfully uploaded! 🎉');
+          const message = this.isScheduled 
+            ? 'Video successfully scheduled! It will be available at the scheduled time. 🎉'
+            : 'Video successfully uploaded! 🎉';
+          alert(message);
           this.router.navigate(['/']);
         }
       },

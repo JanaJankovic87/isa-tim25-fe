@@ -57,6 +57,16 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   transcodingStatus: string = 'PENDING';
   private pollingSubscription?: Subscription;
 
+  // Scheduled streaming
+  isScheduledVideo: boolean = false;
+  isVideoAvailable: boolean = true;
+  scheduledTime: Date | null = null;
+  playbackState: any = null;
+  countdownInterval: any = null;
+  playbackSyncInterval: any = null;
+  countdownText: string = '';
+  currentSecond: number = 0;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -81,6 +91,28 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!dateArray || !Array.isArray(dateArray)) return null;
     const [year, month, day, hour, minute, second] = dateArray;
     return new Date(year, month - 1, day, hour, minute, second);
+  }
+
+  parseScheduledTime(scheduledTime: any): Date | null {
+    if (!scheduledTime) return null;
+    
+    // If it's already a Date object
+    if (scheduledTime instanceof Date) {
+      return scheduledTime;
+    }
+    
+    // If it's an array [2026, 2, 15, 20, 0, 0]
+    if (Array.isArray(scheduledTime)) {
+      const [year, month, day, hour, minute, second] = scheduledTime;
+      return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+    }
+    
+    // If it's a string (ISO format)
+    if (typeof scheduledTime === 'string') {
+      return new Date(scheduledTime);
+    }
+    
+    return null;
   }
 
   formatDate(dateArray: any): string {
@@ -113,10 +145,25 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
+            console.log('Video data received:', data);
             this.video = data;
               this.isVideoLoaded = true;
-              this.checkAvailablePresets();
-              this.startTranscodingPolling();
+              
+              // Check if video is scheduled
+              if (data.isScheduled === true) {
+                this.isScheduledVideo = true;
+                this.scheduledTime = this.parseScheduledTime(data.scheduledTime);
+                console.log('Scheduled video - time parsed:', this.scheduledTime);
+                this.checkVideoAvailability();
+              } else {
+                // Regular video (not scheduled)
+                console.log('Regular video - not scheduled');
+                this.isScheduledVideo = false;
+                this.isVideoAvailable = true;
+                this.checkAvailablePresets();
+                this.startTranscodingPolling();
+              }
+              
             this.loadLikeData();
             this.handleViews();
             if (data.userId != null && data.userId != undefined) {
@@ -279,15 +326,21 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getVideoUrl(): string {
-    if (!this.videoId) return '';
+    if (!this.videoId) {
+      console.log('getVideoUrl: no videoId');
+      return '';
+    }
 
-    if (!this.presetsChecked) return '';
-    
-    if (this.selectedQuality === 'original') {
-      return `http://localhost:8082/api/videos/${this.videoId}/video`;
+    // Always return original if presets not checked yet
+    if (!this.presetsChecked || this.selectedQuality === 'original') {
+      const url = `http://localhost:8082/api/videos/${this.videoId}/video`;
+      console.log('getVideoUrl: returning', url);
+      return url;
     }
   
-    return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    const url = `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    console.log('getVideoUrl: returning quality', this.selectedQuality, url);
+    return url;
   }
 
   getQualityLabel(): string {
@@ -473,7 +526,246 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // Scheduled streaming methods
+  checkVideoAvailability(): void {
+    if (!this.videoId) return;
+
+    this.videoService.getVideoAvailability(Number(this.videoId)).subscribe({
+      next: (availability) => {
+        console.log('Availability response:', availability);
+        
+        this.isVideoAvailable = availability.isAvailable;
+        
+        // Parse scheduledTime from response if available
+        if (availability.scheduledTime && !this.scheduledTime) {
+          this.scheduledTime = this.parseScheduledTime(availability.scheduledTime);
+          console.log('Scheduled time from availability:', this.scheduledTime);
+        }
+        
+        if (availability.isAvailable) {
+          // Video is available, start playback synchronization
+          console.log('Scheduled video is now available - starting playback sync');
+          this.checkAvailablePresets();
+          this.startTranscodingPolling();
+          this.startPlaybackSync();
+        } else {
+          // Video is not available yet, show countdown
+          console.log('Scheduled video not yet available - showing countdown');
+          this.startCountdown();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error checking video availability:', err);
+        // Default to available if error
+        this.isVideoAvailable = true;
+        this.checkAvailablePresets();
+        this.startTranscodingPolling();
+      }
+    });
+  }
+
+  startCountdown(): void {
+    if (!this.scheduledTime) return;
+
+    this.updateCountdown();
+    
+    // Update countdown every second
+    this.countdownInterval = setInterval(() => {
+      this.updateCountdown();
+      
+      // Check if video became available
+      const now = new Date();
+      if (now >= this.scheduledTime!) {
+        clearInterval(this.countdownInterval);
+        this.isVideoAvailable = true;
+        console.log('Countdown finished - video is now available');
+        this.checkAvailablePresets();
+        this.startTranscodingPolling();
+        this.startPlaybackSync();
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
+
+  updateCountdown(): void {
+    if (!this.scheduledTime || !(this.scheduledTime instanceof Date) || isNaN(this.scheduledTime.getTime())) {
+      console.error('Invalid scheduled time:', this.scheduledTime);
+      this.countdownText = 'Invalid date';
+      return;
+    }
+
+    const now = new Date();
+    const diff = this.scheduledTime.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      this.countdownText = 'Starting now...';
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    let parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    parts.push(`${seconds}s`);
+
+    this.countdownText = parts.join(' ');
+  }
+
+  startPlaybackSync(): void {
+    if (!this.videoId) return;
+
+    // Get initial playback state
+    this.syncPlayback();
+
+    // Sync every 5 seconds
+    this.playbackSyncInterval = setInterval(() => {
+      this.syncPlayback();
+    }, 5000);
+  }
+
+  syncPlayback(): void {
+    if (!this.videoId) return;
+
+    this.videoService.getPlaybackState(Number(this.videoId)).subscribe({
+      next: (state) => {
+        console.log('Playback state received:', state);
+        
+        this.playbackState = state;
+        this.currentSecond = state.currentSecond;
+        
+        // Parse scheduledTime if available
+        if (state.scheduledTime && !this.scheduledTime) {
+          this.scheduledTime = this.parseScheduledTime(state.scheduledTime);
+        }
+
+        // Sync video player
+        if (this.videoPlayer?.nativeElement && state.isLive && !state.hasEnded) {
+          const video = this.videoPlayer.nativeElement;
+          const targetTime = state.currentSecond;
+          
+          console.log('Syncing: current time =', video.currentTime, 'target time =', targetTime, 'paused =', video.paused);
+          
+          // Only seek if difference is more than 2 seconds
+          if (Math.abs(video.currentTime - targetTime) > 2) {
+            console.log('Seeking to sync position:', targetTime);
+            video.currentTime = targetTime;
+          }
+
+          // Auto-play ONLY if video hasn't been manually paused by user
+          // We'll trust the sync mechanism and not force play
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error syncing playback:', err);
+      }
+    });
+  }
+
+  formatScheduledTime(time: Date | null): string {
+    if (!time) return '';
+    return new Date(time).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  onVideoError(event: any): void {
+    console.error('Video error:', event);
+    
+    // If it's a scheduled video that's not available yet, show countdown
+    if (this.isScheduledVideo && !this.isVideoAvailable) {
+      console.log('Video not available yet - showing countdown');
+      this.isVideoAvailable = false;
+      this.startCountdown();
+      this.cdr.detectChanges();
+      return;
+    }
+    
+    // Check if backend returned 403 (forbidden)
+    const videoElement = event.target as HTMLVideoElement;
+    if (videoElement && videoElement.error) {
+      const error = videoElement.error;
+      console.error('Video error code:', error.code, 'message:', error.message);
+      
+      // Network error might be 403 from backend
+      if (error.code === 2) { // MEDIA_ERR_NETWORK
+        // Re-check availability
+        if (this.videoId) {
+          this.checkVideoAvailability();
+        }
+      }
+    }
+  }
+
+  onVideoSeeking(event: any): void {
+    console.log('onVideoSeeking triggered - isScheduledVideo:', this.isScheduledVideo, 
+                'isLive:', this.playbackState?.isLive, 
+                'hasEnded:', this.playbackState?.hasEnded);
+    
+    // Prevent seeking during live scheduled stream
+    if (this.isScheduledVideo && this.playbackState?.isLive && !this.playbackState?.hasEnded) {
+      const videoElement = event.target as HTMLVideoElement;
+      if (videoElement && this.currentSecond !== undefined) {
+        const currentPos = videoElement.currentTime;
+        const targetPos = this.currentSecond;
+        const diff = Math.abs(currentPos - targetPos);
+        
+        console.log('Seeking detected - currentPos:', currentPos, 'targetPos:', targetPos, 'diff:', diff);
+        
+        // Only block if user is trying to seek to a significantly different position
+        if (diff > 3) {
+          console.log('Seeking blocked during live stream - user tried to seek too far');
+          event.preventDefault();
+          setTimeout(() => {
+            videoElement.currentTime = targetPos;
+          }, 0);
+        }
+      }
+    }
+  }
+
+  onVideoSeeked(event: any): void {
+    console.log('onVideoSeeked triggered - isScheduledVideo:', this.isScheduledVideo, 
+                'isLive:', this.playbackState?.isLive, 
+                'hasEnded:', this.playbackState?.hasEnded);
+    
+    // Ensure video stays at synchronized position during live stream
+    if (this.isScheduledVideo && this.playbackState?.isLive && !this.playbackState?.hasEnded) {
+      const videoElement = event.target as HTMLVideoElement;
+      if (videoElement && this.currentSecond !== undefined) {
+        const diff = Math.abs(videoElement.currentTime - this.currentSecond);
+        
+        console.log('Seeked position:', videoElement.currentTime, 'target:', this.currentSecond, 'diff:', diff);
+        
+        // Only correct if seeked too far from sync position
+        if (diff > 3) {
+          console.log('Video seeked too far - correcting position');
+          setTimeout(() => {
+            videoElement.currentTime = this.currentSecond;
+          }, 0);
+        }
+      }
+    }
+  }
+
   ngOnDestroy(): void {
     this.pollingSubscription?.unsubscribe();
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+    if (this.playbackSyncInterval) {
+      clearInterval(this.playbackSyncInterval);
+    }
   }
 }

@@ -96,18 +96,15 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   parseScheduledTime(scheduledTime: any): Date | null {
     if (!scheduledTime) return null;
     
-    // If it's already a Date object
     if (scheduledTime instanceof Date) {
       return scheduledTime;
     }
     
-    // If it's an array [2026, 2, 15, 20, 0, 0]
     if (Array.isArray(scheduledTime)) {
       const [year, month, day, hour, minute, second] = scheduledTime;
       return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
     }
     
-    // If it's a string (ISO format)
     if (typeof scheduledTime === 'string') {
       return new Date(scheduledTime);
     }
@@ -149,7 +146,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
             this.video = data;
               this.isVideoLoaded = true;
               
-              // Check if video is scheduled
               if (data.isScheduled === true) {
                 this.isScheduledVideo = true;
                 this.scheduledTime = this.parseScheduledTime(data.scheduledTime);
@@ -331,7 +327,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       return '';
     }
 
-    // Always return original if presets not checked yet
     if (!this.presetsChecked || this.selectedQuality === 'original') {
       const url = `http://localhost:8082/api/videos/${this.videoId}/video`;
       console.log('getVideoUrl: returning', url);
@@ -526,7 +521,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Scheduled streaming methods
   checkVideoAvailability(): void {
     if (!this.videoId) return;
 

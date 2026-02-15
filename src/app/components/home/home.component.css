@@ -377,11 +377,11 @@
   font-weight: 500;
 }
 
-.scheduled-badge {
+/* Status badges for scheduled videos */
+.status-badge {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 4px 10px;
   border-radius: 6px;
@@ -394,8 +394,39 @@
   z-index: 2;
 }
 
-.scheduled-badge svg {
+.status-badge svg {
   flex-shrink: 0;
+}
+
+.scheduled-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.live-badge {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  animation: liveGlow 2s ease-in-out infinite;
+}
+
+@keyframes liveGlow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5); }
+  50% { box-shadow: 0 4px 16px rgba(220, 38, 38, 0.8); }
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ended-badge {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
 .video-info {

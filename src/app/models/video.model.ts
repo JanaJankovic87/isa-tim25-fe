@@ -15,6 +15,10 @@ export interface Video {
   scheduledTime?: Date;
   isScheduled?: boolean;
   videoDurationSeconds?: number;
+  status?: 'REGULAR' | 'SCHEDULED' | 'LIVE' | 'ENDED';
+  currentSecond?: number;
+  secondsUntilStart?: number;
+  message?: string;
 }
 
 export interface VideoPlaybackState {

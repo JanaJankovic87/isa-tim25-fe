@@ -48,7 +48,6 @@ export class CreateVideoComponent implements OnInit {
   ngOnInit(): void {
     // Automatically get user's location when component loads
     this.loadUserLocation();
-    // Set minimum datetime to current time
     this.setMinDateTime();
   }
 
@@ -235,7 +234,6 @@ export class CreateVideoComponent implements OnInit {
       return;
     }
 
-    // Validate scheduled time if scheduled
     if (this.isScheduled) {
       const scheduledTime = this.videoForm.value.scheduledTime;
       if (!scheduledTime) {
@@ -257,7 +255,6 @@ export class CreateVideoComponent implements OnInit {
     // Get location from form or use auto-detected location
     const location = this.videoForm.value.location || this.locationName;
     
-    // Get scheduled time if scheduled
     const scheduledTime = this.isScheduled ? this.videoForm.value.scheduledTime : null;
 
     this.videoService.createVideo(

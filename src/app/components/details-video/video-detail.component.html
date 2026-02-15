@@ -43,7 +43,6 @@
             <div class="stream-header">
               <h3 *ngIf="playbackState?.isLive">Live Stream</h3>
               <h3 *ngIf="isScheduledVideo && !isVideoAvailable">Waiting Room</h3>
-              <button class="leave-room" (click)="leaveStreamRoom()">Leave</button>
             </div>
 
             <video

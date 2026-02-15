@@ -62,6 +62,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   isVideoAvailable: boolean = true;
   scheduledTime: Date | null = null;
   playbackState: any = null;
+  showStreamRoom: boolean = false; // whether to show the live/room UI
+  hasRedirectedOnEnd: boolean = false;
   countdownInterval: any = null;
   playbackSyncInterval: any = null;
   countdownText: string = '';
@@ -530,20 +532,18 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         
         this.isVideoAvailable = availability.isAvailable;
         
-        // Parse scheduledTime from response if available
         if (availability.scheduledTime && !this.scheduledTime) {
           this.scheduledTime = this.parseScheduledTime(availability.scheduledTime);
           console.log('Scheduled time from availability:', this.scheduledTime);
         }
         
         if (availability.isAvailable) {
-          // Video is available, start playback synchronization
           console.log('Scheduled video is now available - starting playback sync');
           this.checkAvailablePresets();
           this.startTranscodingPolling();
           this.startPlaybackSync();
+          this.hasRedirectedOnEnd = false;
         } else {
-          // Video is not available yet, show countdown
           console.log('Scheduled video not yet available - showing countdown');
           this.startCountdown();
         }
@@ -551,7 +551,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error checking video availability:', err);
-        // Default to available if error
         this.isVideoAvailable = true;
         this.checkAvailablePresets();
         this.startTranscodingPolling();
@@ -614,10 +613,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   startPlaybackSync(): void {
     if (!this.videoId) return;
 
-    // Get initial playback state
     this.syncPlayback();
 
-    // Sync every 5 seconds
     this.playbackSyncInterval = setInterval(() => {
       this.syncPlayback();
     }, 5000);
@@ -633,26 +630,39 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         this.playbackState = state;
         this.currentSecond = state.currentSecond;
         
-        // Parse scheduledTime if available
         if (state.scheduledTime && !this.scheduledTime) {
           this.scheduledTime = this.parseScheduledTime(state.scheduledTime);
         }
 
-        // Sync video player
+        if (state.isLive && !state.hasEnded) {
+          const wasShowing = this.showStreamRoom;
+          this.showStreamRoom = true;
+          if (!wasShowing) {
+            setTimeout(() => this.ensurePlayerAtCurrentSecond(true), 120);
+            setTimeout(() => this.ensurePlayerAtCurrentSecond(true), 600);
+          }
+        }
+
         if (this.videoPlayer?.nativeElement && state.isLive && !state.hasEnded) {
           const video = this.videoPlayer.nativeElement;
           const targetTime = state.currentSecond;
           
           console.log('Syncing: current time =', video.currentTime, 'target time =', targetTime, 'paused =', video.paused);
           
-          // Only seek if difference is more than 2 seconds
           if (Math.abs(video.currentTime - targetTime) > 2) {
             console.log('Seeking to sync position:', targetTime);
             video.currentTime = targetTime;
           }
 
-          // Auto-play ONLY if video hasn't been manually paused by user
-          // We'll trust the sync mechanism and not force play
+        }
+
+        if (state.hasEnded) {
+          this.showStreamRoom = false;
+          if (!this.hasRedirectedOnEnd && this.videoId) {
+            this.hasRedirectedOnEnd = true;
+            // navigate to same details route to refresh UI
+            this.router.navigate(['/video', this.videoId]);
+          }
         }
 
         this.cdr.detectChanges();
@@ -661,6 +671,27 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         console.error('Error syncing playback:', err);
       }
     });
+  }
+
+ 
+  private ensurePlayerAtCurrentSecond(autoPlay: boolean = true): void {
+    try {
+      const el = this.videoPlayer?.nativeElement;
+      if (!el || this.currentSecond === undefined || this.currentSecond === null) return;
+
+      const tolerance = 0.5;
+      if (Math.abs(el.currentTime - this.currentSecond) > tolerance) {
+        el.currentTime = this.currentSecond;
+      }
+
+      if (autoPlay) {
+        el.play().catch(() => {
+          // ignore; user agent may block autoplay
+        });
+      }
+    } catch (e) {
+      // swallow any errors - this is best-effort
+    }
   }
 
   formatScheduledTime(time: Date | null): string {
@@ -677,7 +708,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   onVideoError(event: any): void {
     console.error('Video error:', event);
     
-    // If it's a scheduled video that's not available yet, show countdown
     if (this.isScheduledVideo && !this.isVideoAvailable) {
       console.log('Video not available yet - showing countdown');
       this.isVideoAvailable = false;
@@ -686,15 +716,12 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     
-    // Check if backend returned 403 (forbidden)
     const videoElement = event.target as HTMLVideoElement;
     if (videoElement && videoElement.error) {
       const error = videoElement.error;
       console.error('Video error code:', error.code, 'message:', error.message);
       
-      // Network error might be 403 from backend
-      if (error.code === 2) { // MEDIA_ERR_NETWORK
-        // Re-check availability
+      if (error.code === 2) { 
         if (this.videoId) {
           this.checkVideoAvailability();
         }
@@ -703,26 +730,24 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onVideoSeeking(event: any): void {
-    console.log('onVideoSeeking triggered - isScheduledVideo:', this.isScheduledVideo, 
-                'isLive:', this.playbackState?.isLive, 
+    console.log('onVideoSeeking triggered - isScheduledVideo:', this.isScheduledVideo,
+                'isLive:', this.playbackState?.isLive,
                 'hasEnded:', this.playbackState?.hasEnded);
-    
-    // Prevent seeking during live scheduled stream
+
     if (this.isScheduledVideo && this.playbackState?.isLive && !this.playbackState?.hasEnded) {
       const videoElement = event.target as HTMLVideoElement;
       if (videoElement && this.currentSecond !== undefined) {
-        const currentPos = videoElement.currentTime;
-        const targetPos = this.currentSecond;
-        const diff = Math.abs(currentPos - targetPos);
-        
-        console.log('Seeking detected - currentPos:', currentPos, 'targetPos:', targetPos, 'diff:', diff);
-        
-        // Only block if user is trying to seek to a significantly different position
-        if (diff > 3) {
-          console.log('Seeking blocked during live stream - user tried to seek too far');
+        const desiredPos = videoElement.currentTime; 
+        const allowedPos = this.currentSecond;
+        const forwardTolerance = 0.5; 
+
+        console.log('Seeking detected - desiredPos:', desiredPos, 'allowedPos:', allowedPos);
+
+        if (desiredPos > allowedPos + forwardTolerance) {
+          console.log('Forward seeking blocked during live stream - snapping back to allowed position');
           event.preventDefault();
           setTimeout(() => {
-            videoElement.currentTime = targetPos;
+            try { videoElement.currentTime = allowedPos; } catch (e) { /* ignore */ }
           }, 0);
         }
       }
@@ -730,26 +755,33 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onVideoSeeked(event: any): void {
-    console.log('onVideoSeeked triggered - isScheduledVideo:', this.isScheduledVideo, 
-                'isLive:', this.playbackState?.isLive, 
+    console.log('onVideoSeeked triggered - isScheduledVideo:', this.isScheduledVideo,
+                'isLive:', this.playbackState?.isLive,
                 'hasEnded:', this.playbackState?.hasEnded);
-    
-    // Ensure video stays at synchronized position during live stream
+
     if (this.isScheduledVideo && this.playbackState?.isLive && !this.playbackState?.hasEnded) {
       const videoElement = event.target as HTMLVideoElement;
       if (videoElement && this.currentSecond !== undefined) {
-        const diff = Math.abs(videoElement.currentTime - this.currentSecond);
-        
-        console.log('Seeked position:', videoElement.currentTime, 'target:', this.currentSecond, 'diff:', diff);
-        
-        // Only correct if seeked too far from sync position
-        if (diff > 3) {
-          console.log('Video seeked too far - correcting position');
+        const desiredPos = videoElement.currentTime;
+        const allowedPos = this.currentSecond;
+        const forwardTolerance = 0.5;
+
+        console.log('Seeked position:', desiredPos, 'allowed:', allowedPos);
+
+        if (desiredPos > allowedPos + forwardTolerance) {
+          console.log('Seeked forward beyond allowed position - correcting to allowed position');
           setTimeout(() => {
-            videoElement.currentTime = this.currentSecond;
+            try { videoElement.currentTime = allowedPos; } catch (e) { /* ignore */ }
           }, 0);
         }
       }
+    }
+  }
+
+  leaveStreamRoom(): void {
+    if (this.videoId) {
+      this.showStreamRoom = false;
+      this.router.navigate(['/video', this.videoId]);
     }
   }
 

@@ -37,8 +37,47 @@
           </div>
         </div>
 
-        <!-- Video Player (shown when available) -->
-        <div class="player-box" *ngIf="!isScheduledVideo || isVideoAvailable">
+        <!-- Stream Room - used for scheduled waiting room and live streams -->
+        <div *ngIf="showStreamRoom" class="stream-room">
+          <div class="stream-left">
+            <div class="stream-header">
+              <h3 *ngIf="playbackState?.isLive">Live Stream</h3>
+              <h3 *ngIf="isScheduledVideo && !isVideoAvailable">Waiting Room</h3>
+              <button class="leave-room" (click)="leaveStreamRoom()">Leave</button>
+            </div>
+
+            <video
+              #videoPlayer
+              *ngIf="isVideoLoaded && getVideoUrl() !== ''"
+              [src]="getVideoUrl()"
+              controls
+              class="player stream-player"
+              (error)="onVideoError($event)"
+              (seeking)="onVideoSeeking($event)"
+              (seeked)="onVideoSeeked($event)">
+            </video>
+
+            <div *ngIf="isScheduledVideo && !isVideoAvailable" class="waiting-overlay">
+              <h2>Stream will start at {{ formatScheduledTime(scheduledTime) }}</h2>
+              <div class="countdown">Starts in: {{ countdownText }}</div>
+            </div>
+
+            <div *ngIf="playbackState?.isLive && !playbackState?.hasEnded" class="live-indicator">
+              <span class="live-dot"></span>
+              LIVE
+            </div>
+          </div>
+
+          <div class="stream-right">
+            <div class="chat-placeholder">
+              <h4>Chat</h4>
+              <p>Chat will appear here (placeholder)</p>
+            </div>
+            
+          </div>
+        </div>
+
+        <div class="player-box" *ngIf="!showStreamRoom && (!isScheduledVideo || isVideoAvailable)">
           
           <video
             #videoPlayer
@@ -65,11 +104,9 @@
         </div>
         
         <div class="info-box">
-          <!-- Quality Selector - iznad naslova -->
           <div class="quality-buttons" *ngIf="presetsChecked">
             <span class="quality-label">Quality:</span>
             
-            <!-- Original dugme - uvek dostupno -->
             <button 
               class="quality-btn"
               [class.active]="selectedQuality === 'original'"
@@ -77,9 +114,7 @@
               <span>Original</span>
             </button>
 
-            <!-- Prikazuj dugmiće za presete - aktivni ako su dostupni, zamagljeni ako se procesiraju -->
             <ng-container *ngFor="let q of availableQualities">
-              <!-- Ako je preset dostupan - normalno dugme -->
               <button 
                 *ngIf="availablePresets[q]"
                 class="quality-btn"
@@ -88,7 +123,6 @@
                 <span>{{ q }}</span>
               </button>
               
-              <!-- Ako preset nije dostupan i transkodovanje je u toku - zamagljeno dugme sa tooltip-om -->
               <button 
                 *ngIf="!availablePresets[q] && (transcodingStatus === 'PROCESSING' || transcodingStatus === 'PENDING')"
                 class="quality-btn disabled-processing"
@@ -98,7 +132,6 @@
               </button>
             </ng-container>
 
-            <!-- FAILED poruka -->
             <span *ngIf="transcodingStatus === 'FAILED'" class="transcoding-status failed">
               ⚠️ Transcoding failed
             </span>

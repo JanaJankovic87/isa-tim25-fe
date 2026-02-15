@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { AuthService } from './auth.service';
+import { ConnectionSettingsService } from './connection-settings.service';
 
 export interface WatchPartyCommand {
   roomId: string;
@@ -37,7 +38,11 @@ export class WatchPartyService {
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
   public members$ = this.membersSubject.asObservable();
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private connectionSettingsService: ConnectionSettingsService
+  ) {}
 
 
   connect(roomId: string, userId: string, asOwner: boolean = false): Promise<void> {
@@ -56,9 +61,10 @@ export class WatchPartyService {
       this.isRoomOwner = asOwner;
 
       const token = this.authService.getToken();
+      const baseWsUrl = this.connectionSettingsService.getWsUrl();
       const wsUrl = token 
-        ? `http://localhost:8082/ws?token=${token}` 
-        : 'http://localhost:8082/ws';
+        ? `${baseWsUrl}?token=${token}` 
+        : baseWsUrl;
 
       this.stompClient = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
@@ -124,7 +130,7 @@ export class WatchPartyService {
         }
         
         this.commandSubject.next(data);
-      } catch {
+      } catch (e) {
         console.log('Watch Party message:', body);
         this.messagesSubject.next(body);
       }
@@ -212,9 +218,20 @@ export class WatchPartyService {
   }
 
 
-  generateRoomId(): string {
-    return 'WP-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-  }
+generateRoomId(): string {
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  // Uzmi trenutnu IP sa koje se konektuješ
+  const currentIp = this.connectionSettingsService.getWsUrl()
+    .replace('http://', '')
+    .replace(':8082/ws', '');
+  
+  // Zameni tačke sa crticama (192.168.1.100 → 192-168-1-100)
+  const ipPart = currentIp.replace(/\./g, '-');
+  
+  // Room ID format: 192-168-1-100-ABC123
+  return `${ipPart}-${randomPart}`;
+}
 
 
   isConnected(): boolean {

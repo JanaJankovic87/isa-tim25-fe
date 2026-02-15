@@ -7,6 +7,7 @@ import { WatchPartyService, WatchPartyCommand } from '../../services/watch-party
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { Video } from '../../models/video.model';
+import { ConnectionSettingsService } from '../../services/connection-settings.service';
 
 @Component({
   selector: 'app-watch-party',
@@ -50,7 +51,8 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private connectionSettings: ConnectionSettingsService
   ) {}
 
   ngOnInit(): void {
@@ -183,37 +185,51 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
   }
 
  
-  joinRoom(): void {
-    if (!this.joinRoomId.trim()) {
-      this.error = 'Unesite ID sobe';
-      return;
-    }
-
-    this.isLoading = true;
-    this.error = '';
-    this.roomId = this.joinRoomId.trim().toUpperCase();
-
-    this.watchPartyService.connect(this.roomId, this.currentUserId, false)
-      .then(() => {
-        this.ngZone.run(() => {
-          this.isOwner = false;
-          this.isConnected = true;
-          this.messages.push(`Pridružili ste se sobi "${this.roomId}"`);
-          this.messages.push(`Čekanje da vlasnik pokrene video`);
-          this.isLoading = false;
-          console.log('Joined room successfully');
-          this.cdr.detectChanges();
-        });
-      })
-      .catch(err => {
-        this.ngZone.run(() => {
-          this.error = 'Greška pri pridruživanju sobi. Proverite ID i pokušajte ponovo.';
-          this.isLoading = false;
-          console.error('Join room error:', err);
-          this.cdr.detectChanges();
-        });
-      });
+joinRoom(): void {
+  if (!this.joinRoomId.trim()) {
+    this.error = 'Unesite ID sobe';
+    return;
   }
+
+  this.roomId = this.joinRoomId.trim().toUpperCase();
+  
+  // Izvuci IP iz Room ID (format: 192-168-1-100-ABC123)
+  const parts = this.roomId.split('-');
+  if (parts.length >= 5) {
+    // Prva 4 dela su IP adresa
+    const ip = `${parts[0]}.${parts[1]}.${parts[2]}.${parts[3]}`;
+    console.log('Konektujem se na:', ip);
+    this.connectionSettings.setServerAddress(ip);
+  } else {
+    // Ako nema IP u formatu, koristi localhost
+    console.log('Koristim localhost');
+    this.connectionSettings.setServerAddress('localhost');
+  }
+
+  this.isLoading = true;
+  this.error = '';
+
+  this.watchPartyService.connect(this.roomId, this.currentUserId, false)
+    .then(() => {
+      this.ngZone.run(() => {
+        this.isOwner = false;
+        this.isConnected = true;
+        this.messages.push(`Pridružili ste se sobi "${this.roomId}"`);
+        this.messages.push(`Čekanje da vlasnik pokrene video`);
+        this.isLoading = false;
+        console.log('Joined room successfully');
+        this.cdr.detectChanges();
+      });
+    })
+    .catch(err => {
+      this.ngZone.run(() => {
+        this.error = 'Greška pri pridruživanju sobi. Proverite ID i pokušajte ponovo.';
+        this.isLoading = false;
+        console.error('Join room error:', err);
+        this.cdr.detectChanges();
+      });
+    });
+}
 
  
   playVideo(): void {

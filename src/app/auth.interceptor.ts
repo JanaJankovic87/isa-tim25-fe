@@ -19,7 +19,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         error: (error) => {
           if (error && error.status === 401) {
             console.error('401 on:', req.url, error);
-            // For debugging: DO NOT remove token here so we can inspect backend validation.
+           
           }
         }
       })

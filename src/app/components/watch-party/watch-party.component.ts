@@ -112,7 +112,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
         this.joinRoomId = params['room'];
         this.showCreateMode = false;
         
-        //  AUTO-JOIN: Automatically join when opening link with ?room=xxx
+        
         console.log('[WatchParty] Auto-joining room from URL:', params['room']);
         setTimeout(() => {
           if (!this.isConnected && this.joinRoomId) {
@@ -167,7 +167,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = '';
 
-    // Register the room via REST API so backend can persist and notify other replicas via Redis
+   
     const backendUrl = this.watchPartyService.getBackendUrl();
     const token = this.authService.getToken();
     console.log('[WatchParty] createRoom - accessToken:', token);

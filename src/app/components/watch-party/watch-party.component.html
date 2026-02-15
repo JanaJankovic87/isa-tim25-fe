@@ -104,11 +104,14 @@
 
       <!-- owner video selection -->
       <div *ngIf="isOwner" class="video-selection">
+        <div class="video-search">
+          <input type="search" placeholder="Pretraži po imenu videa..." [(ngModel)]="searchTerm" />
+        </div>
         <h3>Izaberite video za pokretanje:</h3>
         
         <div class="video-grid">
           <div 
-            *ngFor="let video of videos" 
+            *ngFor="let video of getFilteredVideos()" 
             class="video-card"
             [class.selected]="selectedVideoId === video.id"
             (click)="selectedVideoId = video.id ?? null">

@@ -275,6 +275,27 @@
   margin-bottom: 24px;
 }
 
+.video-search {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.video-search input[type="search"] {
+  width: 100%;
+  max-width: 480px;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.video-search input[type="search"]:focus {
+  outline: none;
+  border-color: #d1708f;
+  box-shadow: 0 2px 8px rgba(209,112,143,0.12);
+}
+
 .video-selection h3 {
   font-size: 16px;
   color: #2d3436;

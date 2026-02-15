@@ -29,6 +29,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
   videos: Video[] = [];
   selectedVideoId: number | null = null;
   memberCount: number = 0;
+  searchTerm: string = '';
   
 
   currentUserId: string = '';
@@ -66,7 +67,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.watchPartyService.messages$.subscribe(msg => {
         this.messages.push(msg);
-        // Detect join/leave notifications from backend and update member count (owner only)
+        
         try {
           const text = String(msg).toLowerCase();
           if (this.isOwner && (text.includes('se pridružio') || text.includes('joined'))) {
@@ -82,7 +83,6 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
             });
           }
         } catch (e) {
-          // ignore
         }
         this.scrollToBottom();
       })
@@ -144,6 +144,12 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
         console.error('Error loading videos:', err);
       }
     });
+  }
+
+  getFilteredVideos(): Video[] {
+    const q = this.searchTerm?.trim().toLowerCase();
+    if (!q) return this.videos;
+    return this.videos.filter(v => (v.title || '').toLowerCase().includes(q));
   }
 
  

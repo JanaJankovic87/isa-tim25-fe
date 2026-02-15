@@ -7,7 +7,9 @@ import { JwtAuthenticationRequest, UserTokenState } from '../models/auth.model';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8082/auth';
+ private get apiUrl(): string {
+  return `http://${window.location.hostname}:8082/auth`;
+}
 
   constructor(private http: HttpClient) {}
 
@@ -36,6 +38,30 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this.getToken() !== null;
+  }
+
+  
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.id || payload.sub || null;
+    } catch {
+      return null;
+    }
+  }
+
+ 
+  getUsername(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.username || payload.preferred_username || payload.sub || null;
+    } catch {
+      return null;
+    }
   }
 
 

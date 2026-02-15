@@ -6,33 +6,25 @@ import { tap } from 'rxjs/operators';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('accessToken');
   const router = inject(Router);
-  
-  const requiresAuth = 
-    req.method === 'POST' || 
-    req.method === 'PUT' || 
-    req.method === 'DELETE' ||
-    req.url.includes('/comments/remaining') ||
-    req.url.includes('/likes/status') ||
-    req.url.includes('/my-videos');
-  
-  if (token && requiresAuth) {
+
+  if (token) {
     const cloned = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
       }
     });
-    
+
     return next(cloned).pipe(
       tap({
         error: (error) => {
-          if (error.status === 401) {
-            localStorage.removeItem('accessToken');
-            alert('Your session has expired. Please log in again.');
+          if (error && error.status === 401) {
+            console.error('401 on:', req.url, error);
+            // For debugging: DO NOT remove token here so we can inspect backend validation.
           }
         }
       })
     );
   }
-  
+
   return next(req);
 };

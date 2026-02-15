@@ -27,7 +27,6 @@
         
         <div *ngIf="isScheduledVideo && !isVideoAvailable" class="scheduled-overlay">
           <div class="scheduled-content">
-            <div class="scheduled-icon">📅</div>
             <h2>Scheduled Stream</h2>
             <p class="scheduled-message">This video will be available at:</p>
             <p class="scheduled-time">{{ formatScheduledTime(scheduledTime) }}</p>
@@ -35,9 +34,6 @@
               <span class="countdown-label">Starts in:</span>
               <span class="countdown-time">{{ countdownText }}</span>
             </div>
-            <p class="info-note">
-              ⏰ All viewers will watch this video synchronously starting from the scheduled time.
-            </p>
           </div>
         </div>
 

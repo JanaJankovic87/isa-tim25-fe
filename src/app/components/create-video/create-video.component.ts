@@ -33,6 +33,8 @@ export class CreateVideoComponent implements OnInit {
   // Scheduled streaming
   isScheduled = false;
   minDateTime: string = '';
+  showScheduleDialog = false;
+  scheduledTimeDisplay: string = '';
   
   readonly MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB
 
@@ -79,6 +81,44 @@ export class CreateVideoComponent implements OnInit {
     this.isScheduled = !this.isScheduled;
     if (!this.isScheduled) {
       this.videoForm.patchValue({ scheduledTime: '' });
+      this.scheduledTimeDisplay = '';
+    }
+  }
+
+  openScheduleDialog(): void {
+    if (!this.isUploading) {
+      this.showScheduleDialog = true;
+      this.isScheduled = true;
+    }
+  }
+
+  closeScheduleDialog(): void {
+    this.showScheduleDialog = false;
+  }
+
+  confirmSchedule(): void {
+    const scheduledTime = this.videoForm.get('scheduledTime')?.value;
+    if (scheduledTime) {
+      this.updateScheduledTimeDisplay();
+      this.showScheduleDialog = false;
+      this.isScheduled = true;
+    }
+  }
+
+  updateScheduledTimeDisplay(): void {
+    const scheduledTime = this.videoForm.get('scheduledTime')?.value;
+    if (scheduledTime) {
+      const date = new Date(scheduledTime);
+      this.scheduledTimeDisplay = date.toLocaleString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } else {
+      this.scheduledTimeDisplay = '';
     }
   }
 

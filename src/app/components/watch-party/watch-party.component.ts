@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { WatchPartyService, WatchPartyCommand } from '../../services/watch-party.service';
 import { VideoService } from '../../services/video.service';
@@ -11,7 +11,7 @@ import { Video } from '../../models/video.model';
 @Component({
   selector: 'app-watch-party',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './watch-party.component.html',
   styleUrls: ['./watch-party.component.css']
 })

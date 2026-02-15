@@ -7,7 +7,9 @@ import { JwtAuthenticationRequest, UserTokenState } from '../models/auth.model';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8082/auth';
+  private get apiUrl(): string {
+    return `http://${window.location.hostname}:8082/auth`;
+  }
 
   constructor(private http: HttpClient) {}
 

@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { AuthService } from './auth.service';
-import { ConnectionSettingsService } from './connection-settings.service';
 
 export interface WatchPartyCommand {
   roomId: string;
@@ -38,12 +37,26 @@ export class WatchPartyService {
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
   public members$ = this.membersSubject.asObservable();
 
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private connectionSettingsService: ConnectionSettingsService
-  ) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
+  /**
+   * Dynamically detect backend URL based on where the frontend was loaded from.
+   * 
+   * CRITICAL FOR TWO-COMPUTER SCENARIO:
+   * - Computer A (server): hosts Spring Boot on 192.168.1.10:8082
+   * - Computer B (client): opens http://192.168.1.10:4200 in browser
+   * - window.location.hostname on Computer B = "192.168.1.10" (server IP, NOT client IP!)
+   * - WebSocket URL should be: ws://192.168.1.10:8082/ws
+   * 
+   * This works because the browser preserves the hostname from the URL
+   * the user typed, NOT the client machine's IP address.
+   */
+  getBackendUrl(): string {
+    const hostname = window.location.hostname;
+    // Use the same hostname the frontend was served from
+    // This ensures Computer B connects to Computer A's backend
+    return `http://${hostname}:8082`;
+  }
 
   connect(roomId: string, userId: string, asOwner: boolean = false): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -61,10 +74,13 @@ export class WatchPartyService {
       this.isRoomOwner = asOwner;
 
       const token = this.authService.getToken();
-      const baseWsUrl = this.connectionSettingsService.getWsUrl();
+      const backendUrl = this.getBackendUrl();
       const wsUrl = token 
-        ? `${baseWsUrl}?token=${token}` 
-        : baseWsUrl;
+        ? `${backendUrl}/ws?token=${encodeURIComponent(token)}` 
+        : `${backendUrl}/ws`;
+      
+      console.log('[WatchParty] Connecting to WebSocket:', wsUrl);
+      console.log('[WatchParty] hostname:', window.location.hostname);
 
       this.stompClient = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
@@ -130,7 +146,7 @@ export class WatchPartyService {
         }
         
         this.commandSubject.next(data);
-      } catch (e) {
+      } catch {
         console.log('Watch Party message:', body);
         this.messagesSubject.next(body);
       }
@@ -218,20 +234,9 @@ export class WatchPartyService {
   }
 
 
-generateRoomId(): string {
-  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-  
-  // Uzmi trenutnu IP sa koje se konektuješ
-  const currentIp = this.connectionSettingsService.getWsUrl()
-    .replace('http://', '')
-    .replace(':8082/ws', '');
-  
-  // Zameni tačke sa crticama (192.168.1.100 → 192-168-1-100)
-  const ipPart = currentIp.replace(/\./g, '-');
-  
-  // Room ID format: 192-168-1-100-ABC123
-  return `${ipPart}-${randomPart}`;
-}
+  generateRoomId(): string {
+    return 'WP-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
 
 
   isConnected(): boolean {

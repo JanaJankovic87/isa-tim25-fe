@@ -7,7 +7,6 @@ import { WatchPartyService, WatchPartyCommand } from '../../services/watch-party
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { Video } from '../../models/video.model';
-import { ConnectionSettingsService } from '../../services/connection-settings.service';
 
 @Component({
   selector: 'app-watch-party',
@@ -51,8 +50,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone,
-    private connectionSettings: ConnectionSettingsService
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -72,7 +70,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
         
         try {
           const text = String(msg).toLowerCase();
-          if (this.isOwner && (text.includes('se pridru≈æio') || text.includes('joined'))) {
+          if (this.isOwner && (text.includes('se pridruûio') || text.includes('joined'))) {
             this.ngZone.run(() => {
               this.memberCount = this.memberCount + 1;
               this.cdr.detectChanges();
@@ -93,7 +91,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.watchPartyService.commands$.subscribe((cmd: WatchPartyCommand) => {
         if (cmd.action === 'play' && cmd.videoId) {
-          this.messages.push(`üé¨ Video ${cmd.videoId} je pokrenut!`);
+          this.messages.push(` Video ${cmd.videoId} je pokrenut!`);
         }
       })
     );
@@ -112,6 +110,14 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
       if (params['room']) {
         this.joinRoomId = params['room'];
         this.showCreateMode = false;
+        
+        //  AUTO-JOIN: Automatically join when opening link with ?room=xxx
+        console.log('[WatchParty] Auto-joining room from URL:', params['room']);
+        setTimeout(() => {
+          if (!this.isConnected && this.joinRoomId) {
+            this.joinRoom();
+          }
+        }, 500);
       } else {
         this.resetView();
       }
@@ -176,7 +182,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
       })
       .catch(err => {
         this.ngZone.run(() => {
-          this.error = 'Gre≈°ka pri kreiranju sobe. Poku≈°ajte ponovo.';
+          this.error = 'Greöka pri kreiranju sobe. Pokuöajte ponovo.';
           this.isLoading = false;
           console.error('Room creation error:', err);
           this.cdr.detectChanges();
@@ -185,51 +191,37 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
   }
 
  
-joinRoom(): void {
-  if (!this.joinRoomId.trim()) {
-    this.error = 'Unesite ID sobe';
-    return;
-  }
+  joinRoom(): void {
+    if (!this.joinRoomId.trim()) {
+      this.error = 'Unesite ID sobe';
+      return;
+    }
 
-  this.roomId = this.joinRoomId.trim().toUpperCase();
-  
-  // Izvuci IP iz Room ID (format: 192-168-1-100-ABC123)
-  const parts = this.roomId.split('-');
-  if (parts.length >= 5) {
-    // Prva 4 dela su IP adresa
-    const ip = `${parts[0]}.${parts[1]}.${parts[2]}.${parts[3]}`;
-    console.log('Konektujem se na:', ip);
-    this.connectionSettings.setServerAddress(ip);
-  } else {
-    // Ako nema IP u formatu, koristi localhost
-    console.log('Koristim localhost');
-    this.connectionSettings.setServerAddress('localhost');
-  }
+    this.isLoading = true;
+    this.error = '';
+    this.roomId = this.joinRoomId.trim().toUpperCase();
 
-  this.isLoading = true;
-  this.error = '';
-
-  this.watchPartyService.connect(this.roomId, this.currentUserId, false)
-    .then(() => {
-      this.ngZone.run(() => {
-        this.isOwner = false;
-        this.isConnected = true;
-        this.messages.push(`Pridru≈æili ste se sobi "${this.roomId}"`);
-        this.messages.push(`ƒåekanje da vlasnik pokrene video`);
-        this.isLoading = false;
-        console.log('Joined room successfully');
-        this.cdr.detectChanges();
+    this.watchPartyService.connect(this.roomId, this.currentUserId, false)
+      .then(() => {
+        this.ngZone.run(() => {
+          this.isOwner = false;
+          this.isConnected = true;
+          this.messages.push(`Pridruûili ste se sobi "${this.roomId}"`);
+          this.messages.push(`Cekanje da vlasnik pokrene video`);
+          this.isLoading = false;
+          console.log('Joined room successfully');
+          this.cdr.detectChanges();
+        });
+      })
+      .catch(err => {
+        this.ngZone.run(() => {
+          this.error = 'Greöka pri pridruûivanju sobi. Proverite ID i pokuöajte ponovo.';
+          this.isLoading = false;
+          console.error('Join room error:', err);
+          this.cdr.detectChanges();
+        });
       });
-    })
-    .catch(err => {
-      this.ngZone.run(() => {
-        this.error = 'Gre≈°ka pri pridru≈æivanju sobi. Proverite ID i poku≈°ajte ponovo.';
-        this.isLoading = false;
-        console.error('Join room error:', err);
-        this.cdr.detectChanges();
-      });
-    });
-}
+  }
 
  
   playVideo(): void {
@@ -239,13 +231,13 @@ joinRoom(): void {
     }
 
     if (!this.isOwner) {
-      this.error = 'Samo vlasnik sobe mo≈æe pokrenuti video';
+      this.error = 'Samo vlasnik sobe moûe pokrenuti video';
       return;
     }
 
     const videoId = this.selectedVideoId;
     this.watchPartyService.playVideo(videoId);
-    this.messages.push(`Pokrenuli ste video #${videoId} za sve ƒçlanove`);
+    this.messages.push(`Pokrenuli ste video #${videoId} za sve clanove`);
     
     this.router.navigate(['/video', videoId]);
     

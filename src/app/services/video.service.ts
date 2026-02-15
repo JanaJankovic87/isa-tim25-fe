@@ -10,7 +10,9 @@ import { AuthService } from './auth.service';
 })
 export class VideoService {
   
-  private apiUrl = 'http://localhost:8082/api/videos';
+  private get apiUrl(): string {
+    return `http://${window.location.hostname}:8082/api/videos`;
+  }
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 

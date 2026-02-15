@@ -109,7 +109,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       };
 
       if (this.videoId) {
-        const url = `http://localhost:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
+        const url = `http://${window.location.hostname}:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
@@ -284,10 +284,10 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.presetsChecked) return '';
     
     if (this.selectedQuality === 'original') {
-      return `http://localhost:8082/api/videos/${this.videoId}/video`;
+      return `http://${window.location.hostname}:8082/api/videos/${this.videoId}/video`;
     }
   
-    return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    return `http://${window.location.hostname}:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
   }
 
   getQualityLabel(): string {
@@ -428,7 +428,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     
-    this.http.get<any>(`http://localhost:8082/api/users/${this.video.userId}/profile`)
+    this.http.get<any>(`http://${window.location.hostname}:8082/api/users/${this.video.userId}/profile`)
       .subscribe({
         next: (data) => {
           this.videoAuthor = {

@@ -57,7 +57,7 @@ export class UserProfileComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    const url = `http://localhost:8082/api/users/${userId}/profile`;
+    const url = `http://${window.location.hostname}:8082/api/users/${userId}/profile`;
 
     this.http.get<UserProfile>(url)
       .subscribe({
@@ -98,7 +98,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   getThumbnailUrl(videoId: number): string {
-    return `http://localhost:8082/api/videos/${videoId}/thumbnail?t=${Date.now()}`;
+    return `http://${window.location.hostname}:8082/api/videos/${videoId}/thumbnail?t=${Date.now()}`;
   }
 
   viewVideo(videoId: number): void {

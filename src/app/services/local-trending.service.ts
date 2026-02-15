@@ -21,7 +21,9 @@ export interface TrendingResult {
   providedIn: 'root'
 })
 export class LocalTrendingService {
-  private apiUrl = 'http://localhost:8082/api/trending';
+  private get apiUrl(): string {
+    return `http://${window.location.hostname}:8082/api/trending`;
+  }
 
   constructor(private http: HttpClient) {}
 

@@ -18,7 +18,9 @@ export interface VideoPopularityDTO {
   providedIn: 'root'
 })
 export class PopularityService {
-  private apiUrl = 'http://localhost:8082/api/popularity';
+  private get apiUrl(): string {
+    return `http://${window.location.hostname}:8082/api/popularity`;
+  }
 
   constructor(private http: HttpClient) {}
 

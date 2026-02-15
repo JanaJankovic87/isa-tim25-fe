@@ -296,7 +296,7 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
 
  
   copyLink(): void {
-    const link = `${window.location.origin}/watch-party?room=${this.roomId}`;
+    const link = `${window.location.origin}/watch-party/${this.roomId}`;
     navigator.clipboard.writeText(link).then(() => {
       this.messages.push('Link kopiran u clipboard!');
     }).catch((err: any) => {

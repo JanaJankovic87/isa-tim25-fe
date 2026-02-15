@@ -12,34 +12,36 @@
       </div>
     </div>
 
-    <div class="mode-toggle">
-      <button class="toggle-btn" [class.active]="showCreateMode" (click)="showCreateMode = true">Kreiraj sobu</button>
-      <button class="toggle-btn" [class.active]="!showCreateMode" (click)="showCreateMode = false">Pridruži se</button>
-    </div>
-
-    <div class="mode-content">
-      <div *ngIf="showCreateMode" class="info-card">
-        <h3>Kreiraj Watch Party</h3>
-        <p>Kreirajte novu sobu i podelite link sa prijateljima. Vi kontrolišete koji video se pušta.</p>
-        <button class="primary-btn" (click)="createRoom()" [disabled]="isLoading">
-          <span *ngIf="!isLoading">Kreiraj sobu</span>
-          <span *ngIf="isLoading">Kreiranje...</span>
-        </button>
+    <div *ngIf="!roomId">
+      <div class="mode-toggle">
+        <button class="toggle-btn" [class.active]="showCreateMode" (click)="showCreateMode = true">Kreiraj sobu</button>
+        <button class="toggle-btn" [class.active]="!showCreateMode" (click)="showCreateMode = false">Pridruži se</button>
       </div>
 
-      <div *ngIf="!showCreateMode" class="info-card">
-        <h3>Pridruži se Watch Party-ju</h3>
-        <p>Unesite ID sobe koju ste dobili od prijatelja.</p>
-        <div class="input-group">
-          <input type="text" [(ngModel)]="joinRoomId" placeholder="npr. WP-ABC123" class="room-input" (keyup.enter)="joinRoom()" />
-          <button class="primary-btn" (click)="joinRoom()" [disabled]="isLoading || !joinRoomId.trim()">Pridruži se</button>
+      <div class="mode-content">
+        <div *ngIf="showCreateMode" class="info-card">
+          <h3>Kreiraj Watch Party</h3>
+          <p>Kreirajte novu sobu i podelite link sa prijateljima. Vi kontrolišete koji video se pušta.</p>
+          <button class="primary-btn" (click)="createRoom()" [disabled]="isLoading">
+            <span *ngIf="!isLoading">Kreiraj sobu</span>
+            <span *ngIf="isLoading">Kreiranje...</span>
+          </button>
         </div>
-      </div>
 
-      <div *ngIf="error" class="error-message">{{ error }}</div>
+        <div *ngIf="!showCreateMode" class="info-card">
+          <h3>Pridruži se Watch Party-ju</h3>
+          <p>Unesite ID sobe koju ste dobili od prijatelja.</p>
+          <div class="input-group">
+            <input type="text" [(ngModel)]="joinRoomId" placeholder="npr. WP-ABC123" class="room-input" (keyup.enter)="joinRoom()" />
+            <button class="primary-btn" (click)="joinRoom()" [disabled]="isLoading || !joinRoomId.trim()">Pridruži se</button>
+          </div>
+        </div>
+
+        <div *ngIf="error" class="error-message">{{ error }}</div>
+      </div>
     </div>
 
-    <div *ngIf="isConnected" class="room-section">
+    <div *ngIf="roomId" class="room-section">
       <div class="room-header">
         <div class="room-info">
           <span class="room-label">Soba:</span>

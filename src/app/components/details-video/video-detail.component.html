@@ -68,11 +68,7 @@
           </div>
 
           <div class="stream-right">
-            <div class="chat-placeholder">
-              <h4>Chat</h4>
-              <p>Chat will appear here (placeholder)</p>
-            </div>
-            
+            <app-chat [videoId]="videoId ? +videoId : 0"></app-chat>
           </div>
         </div>
 

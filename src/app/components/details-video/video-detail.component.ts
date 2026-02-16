@@ -24,8 +24,11 @@ import { interval, Subscription } from 'rxjs';
 export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('videoPlayer') videoPlayer?: ElementRef<HTMLVideoElement>;
 
-    // Controls rendering of video element to avoid brief black frame while switching
+   
     isVideoLoaded: boolean = true;
+    isQualityLoading: boolean = false;
+    currentVideoUrl: string = '';
+    private qualityLoadingTimeout?: any;
 
     getThumbnailUrl(id?: number): string {
       if (typeof id === 'number' && !isNaN(id)) {
@@ -43,7 +46,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   videoAuthor: { firstName: string, lastName: string } | null = null;
   recommendedVideos: Video[] = [];
 
-  // Quality selector (transcoding presets)
+  
   availableQualities: string[] = ['480p', '720p'];
   selectedQuality: string = 'original'; 
   availablePresets: {[key: string]: boolean} = {
@@ -227,6 +230,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
        
         this.presetsChecked = true;
+        this.updateVideoUrl();
 
         if (this.transcodingInProgress) {
           setTimeout(() => this.checkAvailablePresets(), 5000);
@@ -238,6 +242,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         console.error('Error checking presets:', err);
    
         this.presetsChecked = true;
+        this.updateVideoUrl();
         this.cdr.detectChanges();
       }
     });
@@ -344,6 +349,18 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return url;
   }
 
+  updateVideoUrl(): void {
+    if (!this.videoId) {
+      this.currentVideoUrl = '';
+      return;
+    }
+    if (!this.presetsChecked || this.selectedQuality === 'original') {
+      this.currentVideoUrl = `http://localhost:8082/api/videos/${this.videoId}/video`;
+    } else {
+      this.currentVideoUrl = `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    }
+  }
+
   getQualityLabel(): string {
     if (this.selectedQuality === 'original') {
       return 'Original';
@@ -351,26 +368,56 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.selectedQuality;
   }
 
-  // Promena kvaliteta videa
+  
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
- 
-    if (quality !== 'original' && !this.availablePresets[quality]) return; 
+    if (quality !== 'original' && !this.availablePresets[quality]) return;
+    
     this.selectedQuality = quality;
+    this.isQualityLoading = true;
+  
+    try { if (this.qualityLoadingTimeout) { clearTimeout(this.qualityLoadingTimeout); } } catch (e) {}
+   
+    this.updateVideoUrl();
+    
+    this.cdr.detectChanges();
 
-    // Briefly unmount and remount the video element so browser reloads stream
-    this.isVideoLoaded = false;
+   
     setTimeout(() => {
-      this.isVideoLoaded = true;
-      this.cdr.detectChanges();
       try {
-        this.videoPlayer?.nativeElement.pause();
-        this.videoPlayer?.nativeElement.load();
-        this.videoPlayer?.nativeElement.play().catch(() => {});
-      } catch (e) {
-        // ignore
-      }
-    }, 80);
+        const el = this.videoPlayer?.nativeElement;
+        if (el) {
+          const cleanup = () => {
+            try {
+              this.isQualityLoading = false;
+              this.cdr.detectChanges();
+            } catch (e) {}
+            try { el.oncanplay = null; } catch (e) {}
+            try { if (this.qualityLoadingTimeout) { clearTimeout(this.qualityLoadingTimeout); this.qualityLoadingTimeout = undefined; } } catch (e) {}
+          };
+
+          el.oncanplay = () => { try { cleanup(); } catch (e) {} };
+          el.onloadeddata = () => { try { cleanup(); } catch (e) {} };
+
+          
+          try {
+            if (el.readyState >= 2 || (el.videoWidth && el.videoWidth > 0)) {
+              try { cleanup(); } catch (e) {}
+            }
+          } catch (e) {}
+
+          
+          this.qualityLoadingTimeout = setTimeout(() => {
+            try {
+              cleanup();
+            } catch (e) {}
+          }, 10000);
+
+          el.load();
+          el.play().catch(() => {});
+        }
+      } catch (e) {}
+    }, 50);
   }
 
   getCurrentUserId(): number | null {

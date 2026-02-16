@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { JwtAuthenticationRequest, UserTokenState } from '../models/auth.model';
 
@@ -13,7 +14,7 @@ export class AuthService {
     return `http://${host}:8082/auth`;
   }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: JwtAuthenticationRequest): Observable<UserTokenState> {
     return this.http.post<UserTokenState>(`${this.getApiUrl()}/login`, credentials)
@@ -30,8 +31,40 @@ export class AuthService {
   }
 
   logout(): void {
+    const token = this.getToken();
+    const url = `${this.getApiUrl()}/logout`;
+
+    console.log('🔓 Logging out...');
+    console.log('   URL:', url);
+    console.log('   Token:', token ? 'EXISTS' : 'NO TOKEN');
+
+    if (token) {
+      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+      this.http.post(url, {}, { headers }).subscribe({
+        next: (response) => {
+          console.log('✓ Logout successful:', response);
+          this.clearSessionAndNavigate();
+        },
+        error: (err) => {
+          console.error('❌ Logout error:', err);
+          // Clear session and navigate even on error
+          this.clearSessionAndNavigate();
+        }
+      });
+    } else {
+      console.warn('⚠ No token found, clearing session anyway');
+      this.clearSessionAndNavigate();
+    }
+  }
+
+  private clearSessionAndNavigate(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('expiresIn');
+    try {
+      this.router.navigate(['/login']);
+    } catch (e) {
+      // ignore navigation errors in environments where Router may not be available
+    }
   }
 
   getToken(): string | null {

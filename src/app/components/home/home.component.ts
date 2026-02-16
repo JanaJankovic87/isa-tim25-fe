@@ -342,8 +342,7 @@ export class HomeComponent implements OnInit {
 
   onLogout(): void {
     this.authService.logout();
-    this.showProfileMenu = false; 
-    this.router.navigate(['/']);
+    this.showProfileMenu = false;
   }
 
   onAddVideo(): void {

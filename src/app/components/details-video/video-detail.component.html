@@ -47,10 +47,11 @@
 
             <video
               #videoPlayer
-              *ngIf="isVideoLoaded && getVideoUrl() !== ''"
-              [src]="getVideoUrl()"
+              *ngIf="isVideoLoaded && currentVideoUrl !== ''"
+              [attr.src]="currentVideoUrl"
               controls
               class="player stream-player"
+              preload="auto"
               (error)="onVideoError($event)"
               (seeking)="onVideoSeeking($event)"
               (seeked)="onVideoSeeked($event)">
@@ -73,13 +74,18 @@
         </div>
 
         <div class="player-box" *ngIf="!showStreamRoom && (!isScheduledVideo || isVideoAvailable)">
+         
+          <div *ngIf="isQualityLoading" class="quality-loading-overlay">
+            <span>Loading {{ selectedQuality }}...</span>
+          </div>
           
           <video
             #videoPlayer
-            *ngIf="isVideoLoaded && getVideoUrl() !== ''"
-            [src]="getVideoUrl()"
+            *ngIf="isVideoLoaded && currentVideoUrl !== ''"
+            [attr.src]="currentVideoUrl"
             controls
             class="player"
+            preload="auto"
             (error)="onVideoError($event)"
             (seeking)="onVideoSeeking($event)"
             (seeked)="onVideoSeeked($event)">

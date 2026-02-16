@@ -100,12 +100,12 @@
           </div>
           
           <div *ngIf="isScheduledVideo && playbackState?.isLive && !playbackState?.hasEnded" class="no-seek-warning">
-            ⚠️ Live stream - seeking disabled
+             Live stream - seeking disabled
           </div>
         </div>
         
         <div class="info-box">
-          <div class="quality-buttons" *ngIf="presetsChecked">
+          <div class="quality-buttons">
             <span class="quality-label">Quality:</span>
             
             <button 

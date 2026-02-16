@@ -220,28 +220,38 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   checkAvailablePresets(): void {
     if (!this.videoId) return;
     this.videoService.getAvailablePresets(Number(this.videoId)).subscribe({
-      next: (presets) => {
+      next: (response) => {
+        const presets = response.presets || response;
+        const status = response.transcodingStatus || (response.status || 'PENDING');
+
+        console.log('Checking presets:', presets, 'Status:', status);
+
         this.availablePresets = presets;
+        this.transcodingStatus = status;
 
-        const anyAvailable = Object.values(presets).some(v => v === true);
-        this.transcodingInProgress = !anyAvailable;
+        const allReady = (presets['720p'] === true) && (presets['480p'] === true);
+        this.transcodingInProgress = !allReady;
 
-        // Always default to original
-        this.selectedQuality = 'original';
+      
+        this.presetsChecked = allReady;
 
-       
-        this.presetsChecked = true;
+        if (!this.selectedQuality || (this.selectedQuality !== 'original' && !presets[this.selectedQuality])) {
+          this.selectedQuality = 'original';
+        }
+
         this.updateVideoUrl();
 
-        if (this.transcodingInProgress) {
+        if (!allReady && status !== 'FAILED') {
+          console.log('Not all presets ready, checking again in 5s...');
           setTimeout(() => this.checkAvailablePresets(), 5000);
+        } else {
+          console.log('All presets ready — polling stopped');
         }
 
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error checking presets:', err);
-   
         this.presetsChecked = true;
         this.updateVideoUrl();
         this.cdr.detectChanges();
@@ -374,51 +384,72 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
     if (quality !== 'original' && !this.availablePresets[quality]) return;
-    
+
     this.selectedQuality = quality;
     this.isQualityLoading = true;
-  
-    try { if (this.qualityLoadingTimeout) { clearTimeout(this.qualityLoadingTimeout); } } catch (e) {}
-   
+
+    try { if (this.qualityLoadingTimeout) { clearTimeout(this.qualityLoadingTimeout); this.qualityLoadingTimeout = undefined; } } catch (e) {}
+
     this.updateVideoUrl();
-    
     this.cdr.detectChanges();
 
-   
     setTimeout(() => {
       try {
         const el = this.videoPlayer?.nativeElement;
-        if (el) {
-          const cleanup = () => {
-            try {
-              this.isQualityLoading = false;
-              this.cdr.detectChanges();
-            } catch (e) {}
-            try { el.oncanplay = null; } catch (e) {}
-            try { if (this.qualityLoadingTimeout) { clearTimeout(this.qualityLoadingTimeout); this.qualityLoadingTimeout = undefined; } } catch (e) {}
-          };
-
-          el.oncanplay = () => { try { cleanup(); } catch (e) {} };
-          el.onloadeddata = () => { try { cleanup(); } catch (e) {} };
-
-          
-          try {
-            if (el.readyState >= 2 || (el.videoWidth && el.videoWidth > 0)) {
-              try { cleanup(); } catch (e) {}
-            }
-          } catch (e) {}
-
-          
-          this.qualityLoadingTimeout = setTimeout(() => {
-            try {
-              cleanup();
-            } catch (e) {}
-          }, 10000);
-
-          el.load();
-          el.play().catch(() => {});
+        if (!el) {
+          this.isQualityLoading = false;
+          this.cdr.detectChanges();
+          return;
         }
-      } catch (e) {}
+
+        const cleanup = (reason: string) => {
+          try { console.log('[Quality] cleanup reason:', reason); } catch (e) {}
+          try { el.oncanplay = null; } catch (e) {}
+          try { el.onloadeddata = null; } catch (e) {}
+          try { el.onerror = null; } catch (e) {}
+          try {
+            if (this.qualityLoadingTimeout) { clearTimeout(this.qualityLoadingTimeout); this.qualityLoadingTimeout = undefined; }
+          } catch (e) {}
+          this.isQualityLoading = false;
+          try { this.cdr.detectChanges(); } catch (e) {}
+        };
+
+        // Attach handlers
+        el.oncanplay = () => cleanup('canplay');
+        el.onloadeddata = () => cleanup('loadeddata');
+
+        el.onerror = () => {
+          console.error('[Quality] Video load error, reverting to original');
+          cleanup('error');
+          this.selectedQuality = 'original';
+          this.updateVideoUrl();
+          try {
+            el.src = this.currentVideoUrl;
+            el.load();
+            this.cdr.detectChanges();
+          } catch (e) {}
+        };
+
+        // DIRECTLY set the element src — do not rely only on Angular binding
+        const newUrl = this.currentVideoUrl;
+        try { console.log('[Quality] Setting src directly to:', newUrl); } catch (e) {}
+        el.src = newUrl;
+        el.load();
+
+        
+        this.qualityLoadingTimeout = setTimeout(() => {
+          cleanup('timeout-10s');
+        }, 10000);
+
+        el.play().catch((err) => {
+          try { console.warn('[Quality] Autoplay blocked:', err); } catch (e) {}
+        });
+
+      } catch (e) {
+        console.error('[Quality] Exception:', e);
+        this.isQualityLoading = false;
+        try { this.cdr.detectChanges(); } catch (e) {}
+      }
     }, 50);
   }
 
@@ -548,32 +579,35 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   startTranscodingPolling(): void {
     if (!this.videoId) return;
-    
+
    
     this.videoService.getTranscodingStatus(Number(this.videoId)).subscribe(status => {
+      console.log('Initial transcoding status:', status);
       this.transcodingStatus = status;
       this.cdr.detectChanges();
-      
-    
-      if (status === 'COMPLETED' || status === 'FAILED') {
-        if (status === 'COMPLETED') {
-          this.checkAvailablePresets();
-        }
-        return;
-      }
-      
-      
-      this.pollingSubscription = interval(10000).pipe(
-        switchMap(() => this.videoService.getTranscodingStatus(Number(this.videoId))),
-        takeWhile(s => s !== 'COMPLETED' && s !== 'FAILED', true)
-      ).subscribe(s => {
-        this.transcodingStatus = s;
-        if (s === 'COMPLETED') {
-          this.checkAvailablePresets();
-        }
-        this.cdr.detectChanges();
-      });
     });
+
+   
+    this.pollingSubscription = interval(10000).pipe(
+      switchMap(() => this.videoService.getTranscodingStatus(Number(this.videoId))),
+      takeWhile(status => {
+        this.transcodingStatus = status;
+
+        if (status === 'COMPLETED') {
+          console.log('Transcoding completed!');
+          this.checkAvailablePresets();
+          return false; 
+        }
+
+        if (status === 'FAILED') {
+          console.log('Transcoding failed!');
+          return false; 
+        }
+
+        console.log('Transcoding status:', status);
+        return true; 
+      }, true)
+    ).subscribe();
   }
 
   checkVideoAvailability(): void {

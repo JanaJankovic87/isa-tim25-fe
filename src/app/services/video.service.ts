@@ -204,9 +204,19 @@ export class VideoService {
     return `${this.getApiUrl()}/${id}/video/${preset}`;
   }
 
-  getAvailablePresets(id: number): Observable<{[key: string]: boolean}> {
-    return this.http.get<{[key: string]: boolean}>(`${this.getApiUrl()}/${id}/presets`).pipe(
-      catchError(() => of({'720p': false, '480p': false}))
+getAvailablePresets(id: number): Observable<any> {
+    return this.http.get<any>(`${this.getApiUrl()}/${id}/presets`).pipe(
+      map(response => {
+        console.log('[VideoService] Presets response for video', id, ':', response);
+        if (response && response.presets && response.transcodingStatus) {
+          return response;
+        }
+        return { presets: response || {'720p': false, '480p': false}, transcodingStatus: 'PENDING' };
+      }),
+      catchError((error) => {
+        console.error('[VideoService] Error fetching presets for video', id, ':', error);
+        return of({ presets: {'720p': false, '480p': false}, transcodingStatus: 'PENDING' });
+      })
     );
   }
 

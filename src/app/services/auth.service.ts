@@ -7,12 +7,16 @@ import { JwtAuthenticationRequest, UserTokenState } from '../models/auth.model';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8082/auth';
+  
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    return `http://${host}:8082/auth`;
+  }
 
   constructor(private http: HttpClient) {}
 
   login(credentials: JwtAuthenticationRequest): Observable<UserTokenState> {
-    return this.http.post<UserTokenState>(`${this.apiUrl}/login`, credentials)
+    return this.http.post<UserTokenState>(`${this.getApiUrl()}/login`, credentials)  // ✅ Zagrada UNUTAR backticks!
       .pipe(
         tap(response => {
           localStorage.setItem('accessToken', response.accessToken);
@@ -22,7 +26,7 @@ export class AuthService {
   }
 
   signup(userRequest: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/signup`, userRequest);
+    return this.http.post<any>(`${this.getApiUrl()}/signup`, userRequest);  // ✅ Ispravljeno!
   }
 
   logout(): void {
@@ -37,6 +41,4 @@ export class AuthService {
   isLoggedIn(): boolean {
     return this.getToken() !== null;
   }
-
-
 }

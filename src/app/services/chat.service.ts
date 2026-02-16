@@ -19,14 +19,35 @@ export class ChatService {
   private connectionStatus = new BehaviorSubject<boolean>(false);
   private currentVideoId: number | null = null;
 
+
+  // ✅ Dinamički URL - automatski detektuje host
+private getWsUrl(): string {
+  const host = window.location.hostname;  
+  return `http://${host}:8082/ws`;
+}
+
+// ✅ Dinamički URL - automatski detektuje host
+private getApiUrl(): string {
+  const host = window.location.hostname;
+  return `http://${host}:8082/api/videos`;
+}
+
+
   connect(videoId: number): void {
     if (this.connectionStatus.value && this.currentVideoId === videoId) {
       return;
     }
+
+
     this.disconnect();
     this.currentVideoId = videoId;
+
+    const wsUrl = this.getWsUrl();  // ✅ Dinamički URL
+    console.log('Connecting to WebSocket:', wsUrl);
+
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8082/ws'),
+      webSocketFactory: () => new SockJS(wsUrl),  // ✅ OVAKO!
+
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -34,22 +55,30 @@ export class ChatService {
         console.log('STOMP: ' + str);
       }
     });
+
+
     this.stompClient.onConnect = () => {
       console.log('WebSocket connected for video:', videoId);
       this.connectionStatus.next(true);
+
+
       this.stompClient?.subscribe(`/topic/video/${videoId}`, (message: IMessage) => {
         const chatMessage: ChatMessage = JSON.parse(message.body);
         this.messageSubject.next(chatMessage);
       });
     };
+
     this.stompClient.onStompError = (frame: any) => {
       console.error('STOMP error:', frame.headers['message']);
       console.error('Details:', frame.body);
     };
+
+
     this.stompClient.onWebSocketClose = () => {
       console.log('WebSocket connection closed');
       this.connectionStatus.next(false);
     };
+
     this.stompClient.activate();
   }
 
@@ -58,11 +87,13 @@ export class ChatService {
       console.error('WebSocket not connected');
       return;
     }
+
     const msg: ChatMessage = {
       username,
       message,
       videoId
     };
+
     this.stompClient.publish({
       destination: `/app/chat/${videoId}`,
       body: JSON.stringify(msg)
@@ -89,4 +120,7 @@ export class ChatService {
   isConnected(): boolean {
     return this.connectionStatus.value;
   }
+
 }
+
+

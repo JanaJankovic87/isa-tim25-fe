@@ -10,7 +10,10 @@ import { AuthService } from './auth.service';
 })
 export class VideoService {
   
-  private apiUrl = 'http://localhost:8082/api/videos';
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    return `http://${host}:8082/api/videos`;
+  }
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -47,7 +50,7 @@ export class VideoService {
     formData.append('thumbnail', thumbnail, thumbnail.name);
     formData.append('video', video, video.name);
 
-    return this.http.post(`${this.apiUrl}/`, formData, {
+    return this.http.post(`${this.getApiUrl()}/`, formData, {
       reportProgress: true,
       observe: 'events'
     }).pipe(
@@ -70,7 +73,7 @@ export class VideoService {
   }
 
   getVideos(): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.apiUrl}/`).pipe(
+    return this.http.get<Video[]>(`${this.getApiUrl()}/`).pipe(
       catchError(error => {
         console.error('Get videos error:', error);
         return throwError(() => error);
@@ -79,7 +82,7 @@ export class VideoService {
   }
 
   getVideo(id: number): Observable<Video> {
-    return this.http.get<Video>(`${this.apiUrl}/${id}`).pipe(
+    return this.http.get<Video>(`${this.getApiUrl()}/${id}`).pipe(
       catchError(error => {
         console.error('Get video error:', error);
         return throwError(() => error);
@@ -90,7 +93,7 @@ export class VideoService {
   deleteVideo(id: number): Observable<void> {
     const token = this.authService.getToken();
     const headers = token ? new HttpHeaders({ 'Authorization': `Bearer ${token}` }) : undefined;
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers }).pipe(
+    return this.http.delete<void>(`${this.getApiUrl()}/${id}`, { headers }).pipe(
       catchError(error => {
         console.error('Delete video error:', error);
         return throwError(() => error);
@@ -99,7 +102,7 @@ export class VideoService {
   }
 
   searchVideos(keyword: string): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.apiUrl}/search`, {
+    return this.http.get<Video[]>(`${this.getApiUrl()}/search`, {
       params: { keyword }
     }).pipe(
       catchError(error => {
@@ -110,7 +113,7 @@ export class VideoService {
   }
 
   filterByTag(tag: string): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.apiUrl}/filter`, {
+    return this.http.get<Video[]>(`${this.getApiUrl()}/filter`, {
       params: { tag }
     }).pipe(
       catchError(error => {
@@ -120,7 +123,7 @@ export class VideoService {
   }
 
   getAllTags(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/tags`).pipe(
+    return this.http.get<string[]>(`${this.getApiUrl()}/tags`).pipe(
       catchError(error => {
         console.error('Get all tags error:', error);
         return throwError(() => error);
@@ -129,7 +132,7 @@ export class VideoService {
   }
 
   likeVideo(id: number, lat?: number | null, lng?: number | null): Observable<any> {
-    const url = `${this.apiUrl}/${id}/like`;
+    const url = `${this.getApiUrl()}/${id}/like`;
     
     let body: any = {};
     
@@ -151,7 +154,7 @@ export class VideoService {
   }
   
   unlikeVideo(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}/like`, { responseType: 'text' }).pipe(
+    return this.http.delete(`${this.getApiUrl()}/${id}/like`, { responseType: 'text' }).pipe(
       catchError(error => {
         console.error('Unlike video error:', error);
         return throwError(() => error);
@@ -160,7 +163,7 @@ export class VideoService {
   }
 
   getLikesCount(id: number): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/${id}/likes/count`).pipe(
+    return this.http.get<number>(`${this.getApiUrl()}/${id}/likes/count`).pipe(
       catchError(error => {
         console.error('Get likes count error:', error);
         return throwError(() => error);
@@ -169,7 +172,7 @@ export class VideoService {
   }
 
   getLikeStatus(id: number): Observable<boolean> {
-    return this.http.get<boolean>(`${this.apiUrl}/${id}/likes/status`).pipe(
+    return this.http.get<boolean>(`${this.getApiUrl()}/${id}/likes/status`).pipe(
       catchError(error => {
         console.error('Get like status error:', error);
         return throwError(() => error);
@@ -180,7 +183,7 @@ export class VideoService {
   getMyVideos(): Observable<Video[]> {
     const token = localStorage.getItem('accessToken');
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.get<Video[]>(`${this.apiUrl}/my-videos`, headers ? { headers } : {}).pipe(
+    return this.http.get<Video[]>(`${this.getApiUrl()}/my-videos`, headers ? { headers } : {}).pipe(
       catchError(error => {
         console.error('Get my videos error:', error);
         return throwError(() => error);
@@ -189,33 +192,33 @@ export class VideoService {
   }
 
   getThumbnailUrl(id: number): string {
-    return `${this.apiUrl}/${id}/thumbnail`;
+    return `${this.getApiUrl()}/${id}/thumbnail`;
   }
 
   getVideoUrl(id: number): string {
-    return `${this.apiUrl}/${id}/video`;
+    return `${this.getApiUrl()}/${id}/video`;
   }
 
   // Dobijanje URL-a za video sa određenim kvalitetom (preset)
   getVideoUrlByPreset(id: number, preset: string): string {
-    return `${this.apiUrl}/${id}/video/${preset}`;
+    return `${this.getApiUrl()}/${id}/video/${preset}`;
   }
 
   getAvailablePresets(id: number): Observable<{[key: string]: boolean}> {
-    return this.http.get<{[key: string]: boolean}>(`${this.apiUrl}/${id}/presets`).pipe(
+    return this.http.get<{[key: string]: boolean}>(`${this.getApiUrl()}/${id}/presets`).pipe(
       catchError(() => of({'720p': false, '480p': false}))
     );
   }
 
   getTranscodingStatus(videoId: number): Observable<string> {
-    return this.http.get<{status: string}>(`${this.apiUrl}/${videoId}/transcoding-status`).pipe(
+    return this.http.get<{status: string}>(`${this.getApiUrl()}/${videoId}/transcoding-status`).pipe(
       map(r => r.status),
       catchError(() => of('PENDING'))
     );
   }
 
   recordView(id: number, lat?: number | null, lng?: number | null): Observable<any> {
-    const url = `${this.apiUrl}/${id}/view`;
+    const url = `${this.getApiUrl()}/${id}/view`;
 
     let body: any = {};
 
@@ -237,7 +240,7 @@ export class VideoService {
   }
 
   getViewCount(id: number): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/${id}/views/count`).pipe(
+    return this.http.get<number>(`${this.getApiUrl()}/${id}/views/count`).pipe(
       catchError(error => {
         console.error('Get view count error:', error);
         return throwError(() => error);
@@ -246,7 +249,7 @@ export class VideoService {
   }
 
   getTrendingVideos(): Observable<TrendingVideoDTO[]> {
-    return this.http.get<TrendingVideoDTO[]>(`${this.apiUrl}/trending`).pipe(
+    return this.http.get<TrendingVideoDTO[]>(`${this.getApiUrl()}/trending`).pipe(
       catchError(error => {
         console.error('Get trending videos error:', error);
         return throwError(() => error);
@@ -254,8 +257,10 @@ export class VideoService {
     );
   }
 
+
   getVideoAvailability(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/availability`).pipe(
+    return this.http.get<any>(`${this.getApiUrl()}/${id}/availability`).pipe(
+
       catchError(error => {
         console.error('Get video availability error:', error);
         return throwError(() => error);
@@ -264,11 +269,14 @@ export class VideoService {
   }
 
   getPlaybackState(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/playback-state`).pipe(
+
+    return this.http.get<any>(`${this.getApiUrl()}/${id}/playback-state`).pipe(
+
       catchError(error => {
         console.error('Get playback state error:', error);
         return throwError(() => error);
       })
     );
   }
+
 }

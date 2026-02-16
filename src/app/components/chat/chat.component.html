@@ -1,0 +1,42 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <h4>Live Chat</h4>
+    <span class="connection-status" [class.connected]="isConnected">
+      {{ isConnected ? 'Connected' : 'Connecting...' }}
+    </span>
+  </div>
+
+  <div class="messages-container" #messagesContainer>
+    <div *ngIf="messages.length === 0" class="no-messages">
+      <p>No messages yet. Be the first to say something!</p>
+    </div>
+
+    <div 
+      *ngFor="let message of messages" 
+      class="message-row"
+      [ngClass]="{'own-row': isOwnMessage(message), 'other-row': !isOwnMessage(message)}">
+      <div class="message-bubble" [ngClass]="{'own-message': isOwnMessage(message)}">
+        <div class="bubble-header">
+          <span class="sender">{{ message.username }}</span>
+          <span class="timestamp">{{ message.timestamp ? (message.timestamp | date:'shortTime') : '' }}</span>
+        </div>
+        <div class="bubble-content">{{ message.message }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-container">
+    <input
+      type="text"
+      [(ngModel)]="newMessage"
+      (keypress)="onKeyPress($event)"
+      placeholder="Type a message..."
+      [disabled]="!isConnected"
+      maxlength="500">
+    <button 
+      (click)="sendMessage()" 
+      [disabled]="!isConnected || !newMessage.trim()">
+      Send
+    </button>
+  </div>
+</div>

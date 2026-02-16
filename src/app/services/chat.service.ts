@@ -19,6 +19,7 @@ export class ChatService {
   private connectionStatus = new BehaviorSubject<boolean>(false);
   private currentVideoId: number | null = null;
 
+
   // ✅ Dinamički URL - automatski detektuje host
 private getWsUrl(): string {
   const host = window.location.hostname;  
@@ -31,10 +32,12 @@ private getApiUrl(): string {
   return `http://${host}:8082/api/videos`;
 }
 
+
   connect(videoId: number): void {
     if (this.connectionStatus.value && this.currentVideoId === videoId) {
       return;
     }
+
 
     this.disconnect();
     this.currentVideoId = videoId;
@@ -44,6 +47,7 @@ private getApiUrl(): string {
 
     this.stompClient = new Client({
       webSocketFactory: () => new SockJS(wsUrl),  // ✅ OVAKO!
+
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -52,9 +56,11 @@ private getApiUrl(): string {
       }
     });
 
+
     this.stompClient.onConnect = () => {
       console.log('WebSocket connected for video:', videoId);
       this.connectionStatus.next(true);
+
 
       this.stompClient?.subscribe(`/topic/video/${videoId}`, (message: IMessage) => {
         const chatMessage: ChatMessage = JSON.parse(message.body);
@@ -66,6 +72,7 @@ private getApiUrl(): string {
       console.error('STOMP error:', frame.headers['message']);
       console.error('Details:', frame.body);
     };
+
 
     this.stompClient.onWebSocketClose = () => {
       console.log('WebSocket connection closed');
@@ -113,4 +120,7 @@ private getApiUrl(): string {
   isConnected(): boolean {
     return this.connectionStatus.value;
   }
+
 }
+
+

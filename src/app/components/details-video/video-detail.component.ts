@@ -10,13 +10,14 @@ import { Video } from '../../models/video.model';
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { CommentsComponent } from '../comments/comments.component';
+import { ChatComponent } from '../chat/chat.component';
 import { filter, switchMap, takeWhile } from 'rxjs/operators';
 import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-video-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, CommentsComponent, RouterLink],
+  imports: [CommonModule, FormsModule, CommentsComponent, RouterLink, ChatComponent],
   templateUrl: './video-detail.component.html',
   styleUrls: ['./video-detail.component.css']
 })
@@ -57,6 +58,21 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   transcodingStatus: string = 'PENDING';
   private pollingSubscription?: Subscription;
 
+  // Scheduled streaming
+  isScheduledVideo: boolean = false;
+  isVideoAvailable: boolean = true;
+  scheduledTime: Date | null = null;
+  playbackState: any = null;
+  showStreamRoom: boolean = false; // whether to show the live/room UI
+  hasRedirectedOnEnd: boolean = false;
+
+  hasJoinedLive: boolean = false;
+  shouldAutoSyncOnJoin: boolean = false;
+  countdownInterval: any = null;
+  playbackSyncInterval: any = null;
+  countdownText: string = '';
+  currentSecond: number = 0;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -81,6 +97,25 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!dateArray || !Array.isArray(dateArray)) return null;
     const [year, month, day, hour, minute, second] = dateArray;
     return new Date(year, month - 1, day, hour, minute, second);
+  }
+
+  parseScheduledTime(scheduledTime: any): Date | null {
+    if (!scheduledTime) return null;
+    
+    if (scheduledTime instanceof Date) {
+      return scheduledTime;
+    }
+    
+    if (Array.isArray(scheduledTime)) {
+      const [year, month, day, hour, minute, second] = scheduledTime;
+      return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+    }
+    
+    if (typeof scheduledTime === 'string') {
+      return new Date(scheduledTime);
+    }
+    
+    return null;
   }
 
   formatDate(dateArray: any): string {
@@ -113,10 +148,24 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
+            console.log('Video data received:', data);
             this.video = data;
               this.isVideoLoaded = true;
-              this.checkAvailablePresets();
-              this.startTranscodingPolling();
+              
+              if (data.isScheduled === true) {
+                this.isScheduledVideo = true;
+                this.scheduledTime = this.parseScheduledTime(data.scheduledTime);
+                console.log('Scheduled video - time parsed:', this.scheduledTime);
+                this.checkVideoAvailability();
+              } else {
+                // Regular video (not scheduled)
+                console.log('Regular video - not scheduled');
+                this.isScheduledVideo = false;
+                this.isVideoAvailable = true;
+                this.checkAvailablePresets();
+                this.startTranscodingPolling();
+              }
+              
             this.loadLikeData();
             this.handleViews();
             if (data.userId != null && data.userId != undefined) {
@@ -279,15 +328,20 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getVideoUrl(): string {
-    if (!this.videoId) return '';
+    if (!this.videoId) {
+      console.log('getVideoUrl: no videoId');
+      return '';
+    }
 
-    if (!this.presetsChecked) return '';
-    
-    if (this.selectedQuality === 'original') {
-      return `http://localhost:8082/api/videos/${this.videoId}/video`;
+    if (!this.presetsChecked || this.selectedQuality === 'original') {
+      const url = `http://localhost:8082/api/videos/${this.videoId}/video`;
+      console.log('getVideoUrl: returning', url);
+      return url;
     }
   
-    return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    const url = `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    console.log('getVideoUrl: returning quality', this.selectedQuality, url);
+    return url;
   }
 
   getQualityLabel(): string {
@@ -473,7 +527,283 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  checkVideoAvailability(): void {
+    if (!this.videoId) return;
+
+    this.videoService.getVideoAvailability(Number(this.videoId)).subscribe({
+      next: (availability) => {
+        console.log('Availability response:', availability);
+        
+        this.isVideoAvailable = availability.isAvailable;
+        
+        if (availability.scheduledTime && !this.scheduledTime) {
+          this.scheduledTime = this.parseScheduledTime(availability.scheduledTime);
+          console.log('Scheduled time from availability:', this.scheduledTime);
+        }
+        
+        if (availability.isAvailable) {
+          console.log('Scheduled video is now available - starting playback sync');
+          this.checkAvailablePresets();
+          this.startTranscodingPolling();
+          this.startPlaybackSync();
+          this.hasRedirectedOnEnd = false;
+        } else {
+          console.log('Scheduled video not yet available - showing countdown');
+          this.startCountdown();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error checking video availability:', err);
+        this.isVideoAvailable = true;
+        this.checkAvailablePresets();
+        this.startTranscodingPolling();
+      }
+    });
+  }
+
+  startCountdown(): void {
+    if (!this.scheduledTime) return;
+
+    this.updateCountdown();
+    
+    // Update countdown every second
+    this.countdownInterval = setInterval(() => {
+      this.updateCountdown();
+      
+      // Check if video became available
+      const now = new Date();
+      if (now >= this.scheduledTime!) {
+        clearInterval(this.countdownInterval);
+        this.isVideoAvailable = true;
+        console.log('Countdown finished - video is now available');
+        this.checkAvailablePresets();
+        this.startTranscodingPolling();
+        this.startPlaybackSync();
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
+
+  updateCountdown(): void {
+    if (!this.scheduledTime || !(this.scheduledTime instanceof Date) || isNaN(this.scheduledTime.getTime())) {
+      console.error('Invalid scheduled time:', this.scheduledTime);
+      this.countdownText = 'Invalid date';
+      return;
+    }
+
+    const now = new Date();
+    const diff = this.scheduledTime.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      this.countdownText = 'Starting now...';
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    let parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    parts.push(`${seconds}s`);
+
+    this.countdownText = parts.join(' ');
+  }
+
+  startPlaybackSync(): void {
+    if (!this.videoId) return;
+
+    this.syncPlayback();
+
+    this.playbackSyncInterval = setInterval(() => {
+      this.syncPlayback();
+    }, 5000);
+  }
+
+  syncPlayback(): void {
+    if (!this.videoId) return;
+
+    this.videoService.getPlaybackState(Number(this.videoId)).subscribe({
+      next: (state) => {
+        console.log('Playback state received:', state);
+        
+        this.playbackState = state;
+        this.currentSecond = state.currentSecond;
+        
+        if (state.scheduledTime && !this.scheduledTime) {
+          this.scheduledTime = this.parseScheduledTime(state.scheduledTime);
+        }
+
+        if (state.isLive && !state.hasEnded) {
+          const wasShowing = this.showStreamRoom;
+          this.showStreamRoom = true;
+          if (!wasShowing) {
+            this.hasJoinedLive = true;
+            this.shouldAutoSyncOnJoin = true;
+            setTimeout(() => this.ensurePlayerAtCurrentSecond(true), 120);
+            setTimeout(() => this.ensurePlayerAtCurrentSecond(true), 600);
+          }
+        }
+
+        if (this.videoPlayer?.nativeElement && state.isLive && !state.hasEnded) {
+          const video = this.videoPlayer.nativeElement;
+          const targetTime = state.currentSecond;
+
+          console.log('Syncing: current time =', video.currentTime, 'target time =', targetTime, 'paused =', video.paused);
+
+          if (this.shouldAutoSyncOnJoin && Math.abs(video.currentTime - targetTime) > 2) {
+            console.log('Auto-seeking to sync position (join):', targetTime);
+            try { video.currentTime = targetTime; } catch (e) { /* ignore */ }
+            this.shouldAutoSyncOnJoin = false;
+          }
+
+        }
+
+        if (state.hasEnded) {
+          this.showStreamRoom = false;
+          this.hasJoinedLive = false;
+          this.shouldAutoSyncOnJoin = false;
+          if (!this.hasRedirectedOnEnd && this.videoId) {
+            this.hasRedirectedOnEnd = true;
+            // navigate to same details route to refresh UI
+            this.router.navigate(['/video', this.videoId]);
+          }
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error syncing playback:', err);
+      }
+    });
+  }
+
+ 
+  private ensurePlayerAtCurrentSecond(autoPlay: boolean = true): void {
+    try {
+      const el = this.videoPlayer?.nativeElement;
+      if (!el || this.currentSecond === undefined || this.currentSecond === null) return;
+
+      const tolerance = 0.5;
+      if (Math.abs(el.currentTime - this.currentSecond) > tolerance) {
+        el.currentTime = this.currentSecond;
+        this.shouldAutoSyncOnJoin = false;
+      }
+
+      if (autoPlay) {
+        el.play().catch(() => {
+          // ignore; user agent may block autoplay
+        });
+      }
+    } catch (e) {
+      // swallow any errors - this is best-effort
+    }
+  }
+
+  formatScheduledTime(time: Date | null): string {
+    if (!time) return '';
+    return new Date(time).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  onVideoError(event: any): void {
+    console.error('Video error:', event);
+    
+    if (this.isScheduledVideo && !this.isVideoAvailable) {
+      console.log('Video not available yet - showing countdown');
+      this.isVideoAvailable = false;
+      this.startCountdown();
+      this.cdr.detectChanges();
+      return;
+    }
+    
+    const videoElement = event.target as HTMLVideoElement;
+    if (videoElement && videoElement.error) {
+      const error = videoElement.error;
+      console.error('Video error code:', error.code, 'message:', error.message);
+      
+      if (error.code === 2) { 
+        if (this.videoId) {
+          this.checkVideoAvailability();
+        }
+      }
+    }
+  }
+
+  onVideoSeeking(event: any): void {
+    console.log('onVideoSeeking triggered - isScheduledVideo:', this.isScheduledVideo,
+                'isLive:', this.playbackState?.isLive,
+                'hasEnded:', this.playbackState?.hasEnded);
+
+    if (this.isScheduledVideo && this.playbackState?.isLive && !this.playbackState?.hasEnded) {
+      const videoElement = event.target as HTMLVideoElement;
+      if (videoElement && this.currentSecond !== undefined) {
+        const desiredPos = videoElement.currentTime; 
+        const allowedPos = this.currentSecond;
+        const forwardTolerance = 0.5; 
+
+        console.log('Seeking detected - desiredPos:', desiredPos, 'allowedPos:', allowedPos);
+
+        if (desiredPos > allowedPos + forwardTolerance) {
+          console.log('Forward seeking blocked during live stream - snapping back to allowed position');
+          event.preventDefault();
+          setTimeout(() => {
+            try { videoElement.currentTime = allowedPos; } catch (e) { /* ignore */ }
+          }, 0);
+        }
+      }
+    }
+  }
+
+  onVideoSeeked(event: any): void {
+    console.log('onVideoSeeked triggered - isScheduledVideo:', this.isScheduledVideo,
+                'isLive:', this.playbackState?.isLive,
+                'hasEnded:', this.playbackState?.hasEnded);
+
+    if (this.isScheduledVideo && this.playbackState?.isLive && !this.playbackState?.hasEnded) {
+      const videoElement = event.target as HTMLVideoElement;
+      if (videoElement && this.currentSecond !== undefined) {
+        const desiredPos = videoElement.currentTime;
+        const allowedPos = this.currentSecond;
+        const forwardTolerance = 0.5;
+
+        console.log('Seeked position:', desiredPos, 'allowed:', allowedPos);
+
+        if (desiredPos > allowedPos + forwardTolerance) {
+          console.log('Seeked forward beyond allowed position - correcting to allowed position');
+          setTimeout(() => {
+            try { videoElement.currentTime = allowedPos; } catch (e) { /* ignore */ }
+          }, 0);
+        }
+      }
+    }
+  }
+
+  leaveStreamRoom(): void {
+    if (this.videoId) {
+      this.showStreamRoom = false;
+      this.hasJoinedLive = false;
+      this.shouldAutoSyncOnJoin = false;
+      this.router.navigate(['/video', this.videoId]);
+    }
+  }
+
   ngOnDestroy(): void {
     this.pollingSubscription?.unsubscribe();
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+    if (this.playbackSyncInterval) {
+      clearInterval(this.playbackSyncInterval);
+    }
   }
 }

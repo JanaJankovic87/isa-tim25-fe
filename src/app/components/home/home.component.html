@@ -36,6 +36,7 @@
       </a>
       
       <div *ngIf="authService.isLoggedIn()" class="user-menu">
+        <a routerLink="/watch-party" style="margin-right:12px; font-weight:600; color:#333; text-decoration:none;">Watch Party</a>
         <button class="add-video-btn" (click)="onAddVideo()">
           <svg width="24" height="24" viewBox="0 0 24 24">
             <path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
@@ -186,7 +187,7 @@
                   <img
                     [src]="video.id ? getThumbnailUrl(video.id) : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Video%3C/text%3E%3C/svg%3E'"
                     [alt]="video.title || 'Video'"
-                    loading="lazy"
+                    [attr.loading]="i === 0 ? 'eager' : 'lazy'"
                     class="trending-thumbnail"
                     style="border-radius: 12px;"
                     (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETrending Video%3C/text%3E%3C/svg%3E'">
@@ -270,7 +271,7 @@
                   <img
                     [src]="video.videoId ? getThumbnailUrl(video.videoId) : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Video%3C/text%3E%3C/svg%3E'"
                     [alt]="video.title || 'Video'"
-                    loading="lazy"
+                    [attr.loading]="i === 0 ? 'eager' : 'lazy'"
                     class="trending-thumbnail"
                     style="border-radius: 12px;"
                     (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22720%22%3E%3Crect fill=%22%23ddd%22 width=%221280%22 height=%22720%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2248%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EPopular Video%3C/text%3E%3C/svg%3E'">
@@ -385,7 +386,7 @@
           <img 
             [src]="getThumbnailUrl(video.id!)" 
             [alt]="video.title"
-            loading="lazy"
+            [attr.loading]="i === 0 ? 'eager' : 'lazy'"
             class="thumbnail"
             (error)="$event.target.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22%3E%3Crect fill=%22%23ddd%22 width=%22320%22 height=%22180%22/%3E%3Ctext fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2218%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Thumbnail%3C/text%3E%3C/svg%3E'"
           >

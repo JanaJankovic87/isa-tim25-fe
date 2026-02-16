@@ -16,7 +16,7 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   login(credentials: JwtAuthenticationRequest): Observable<UserTokenState> {
-    return this.http.post<UserTokenState>(`${this.getApiUrl()}/login`, credentials)  // ✅ Zagrada UNUTAR backticks!
+    return this.http.post<UserTokenState>(`${this.getApiUrl()}/login`, credentials)
       .pipe(
         tap(response => {
           localStorage.setItem('accessToken', response.accessToken);
@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   signup(userRequest: any): Observable<any> {
-    return this.http.post<any>(`${this.getApiUrl()}/signup`, userRequest);  // ✅ Ispravljeno!
+    return this.http.post<any>(`${this.getApiUrl()}/signup`, userRequest);
   }
 
   logout(): void {
@@ -40,5 +40,27 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this.getToken() !== null;
+  }
+  
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.id || payload.sub || null;
+    } catch {
+      return null;
+    }
+  }
+ 
+  getUsername(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.username || payload.preferred_username || payload.sub || null;
+    } catch {
+      return null;
+    }
   }
 }

@@ -133,7 +133,13 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  ngOnInit(): void {
+  
+  
+  
+  
+  
+  
+ ngOnInit(): void {
     window.scrollTo(0, 0);
 
     this.route.params.subscribe(params => {
@@ -162,7 +168,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
                 console.log('Scheduled video - time parsed:', this.scheduledTime);
                 this.checkVideoAvailability();
               } else {
-                // Regular video (not scheduled)
                 console.log('Regular video - not scheduled');
                 this.isScheduledVideo = false;
                 this.isVideoAvailable = true;
@@ -181,7 +186,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
             console.error('Error loading video:', error);
           }
         });
-        // Učitaj preporučene videe (sve osim trenutnog)
         this.videoService.getVideos().subscribe({
           next: (videos) => {
             this.recommendedVideos = videos
@@ -191,7 +195,6 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
                 viewsCount: 0,
                 thumbnailPath: v.thumbnailPath && v.thumbnailPath !== '' ? v.thumbnailPath : undefined
               }));
-            // Fetch view count for each recommended video
             this.recommendedVideos.forEach(v => {
               if (v.id) {
                 this.videoService.getViewCount(v.id).subscribe({
@@ -217,6 +220,13 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  
+  
+  
+  
+  
+  
+  
   checkAvailablePresets(): void {
     if (!this.videoId) return;
     this.videoService.getAvailablePresets(Number(this.videoId)).subscribe({
@@ -343,7 +353,12 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  getVideoUrl(): string {
+  
+  
+  
+  
+  
+getVideoUrl(): string {
     if (!this.videoId) {
       console.log('getVideoUrl: no videoId');
       return '';
@@ -360,18 +375,23 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('getVideoUrl: returning quality', this.selectedQuality, url);
     return url;
   }
+  
+  
+  
 
-  updateVideoUrl(): void {
+updateVideoUrl(): void {
     if (!this.videoId) {
       this.currentVideoUrl = '';
       return;
     }
+    const host = window.location.hostname;
     if (!this.presetsChecked || this.selectedQuality === 'original') {
-      this.currentVideoUrl = `http://localhost:8082/api/videos/${this.videoId}/video`;
+      this.currentVideoUrl = `http://${host}:8082/api/videos/${this.videoId}/video`;
     } else {
-      this.currentVideoUrl = `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+      this.currentVideoUrl = `http://${host}:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
     }
   }
+  
 
   getQualityLabel(): string {
     if (this.selectedQuality === 'original') {
@@ -380,6 +400,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.selectedQuality;
   }
 
+ 
   
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
@@ -557,23 +578,19 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     alert(`You must be logged in to ${actionText}. Please log in or sign up to continue.`);
   }
 
-  loadVideoAuthor(): void {
+ loadVideoAuthor(): void {
     if (this.video.userId == null || this.video.userId == undefined) {
       return;
     }
     
-    this.http.get<any>(`http://localhost:8082/api/users/${this.video.userId}/profile`)
+    const host = window.location.hostname;
+    this.http.get<any>(`http://${host}:8082/api/users/${this.video.userId}/profile`)
       .subscribe({
         next: (data) => {
-          this.videoAuthor = {
-            firstName: data.firstName,
-            lastName: data.lastName
-          };
+          this.videoAuthor = { firstName: data.firstName, lastName: data.lastName };
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          console.error('Error loading video author:', err);
-        }
+        error: (err) => console.error('Error loading video author:', err)
       });
   }
 

@@ -44,4 +44,15 @@ export const routes: Routes = [
     loadComponent: () => import('./components/performance-dashboard/performance-dashboard.component')
       .then(m => m.PerformanceDashboardComponent)
   }
+  ,
+  {
+    path: 'watch-party',
+    loadComponent: () => import('./components/watch-party/watch-party.component')
+      .then(m => m.WatchPartyComponent)
+  },
+  {
+    path: 'watch-party/:roomId',
+    loadComponent: () => import('./components/watch-party/watch-party.component')
+      .then(m => m.WatchPartyComponent)
+  }
 ];

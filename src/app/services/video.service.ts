@@ -38,7 +38,7 @@ export class VideoService {
       location: location,
       latitude: latitude,
       longitude: longitude,
-      isLocationApproximated: true // jer koristimo geocoding, nije tačna GPS lokacija
+      isLocationApproximated: true
     };
     
     if (scheduledTime) {
@@ -57,18 +57,13 @@ export class VideoService {
       map(event => {
         if (event.type === HttpEventType.UploadProgress) {
           const progress = Math.round(100 * event.loaded / (event.total || event.loaded));
-          if (onProgress) {
-            onProgress(progress);
-          }
+          if (onProgress) onProgress(progress);
         } else if (event.type === HttpEventType.Response) {
           return event.body;
         }
         return null;
       }),
-      catchError(error => {
-        console.error('Upload error:', error);
-        return throwError(() => error);
-      })
+      catchError(error => throwError(() => error))
     );
   }
 
@@ -135,24 +130,14 @@ export class VideoService {
     const url = `${this.getApiUrl()}/${id}/like`;
     
     let body: any = {};
-    
     if (typeof lat === 'number' && typeof lng === 'number') {
-      body = {
-        latitude: lat,
-        longitude: lng,
-        locationName: 'GPS Location',
-        isApproximated: false
-      };
-    } 
-
+      body = { latitude: lat, longitude: lng, locationName: 'GPS Location', isApproximated: false };
+    }
     return this.http.post(url, body, { responseType: 'text' as const }).pipe(
-      catchError(error => {
-        console.error('Like video error:', error);
-        return throwError(() => error);
-      })
+      catchError(error => throwError(() => error))
     );
   }
-  
+
   unlikeVideo(id: number): Observable<any> {
     return this.http.delete(`${this.getApiUrl()}/${id}/like`, { responseType: 'text' }).pipe(
       catchError(error => {
@@ -199,12 +184,11 @@ export class VideoService {
     return `${this.getApiUrl()}/${id}/video`;
   }
 
-  // Dobijanje URL-a za video sa određenim kvalitetom (preset)
   getVideoUrlByPreset(id: number, preset: string): string {
     return `${this.getApiUrl()}/${id}/video/${preset}`;
   }
 
-getAvailablePresets(id: number): Observable<any> {
+  getAvailablePresets(id: number): Observable<any> {
     return this.http.get<any>(`${this.getApiUrl()}/${id}/presets`).pipe(
       map(response => {
         console.log('[VideoService] Presets response for video', id, ':', response);
@@ -231,21 +215,11 @@ getAvailablePresets(id: number): Observable<any> {
     const url = `${this.getApiUrl()}/${id}/view`;
 
     let body: any = {};
-
     if (typeof lat === 'number' && typeof lng === 'number') {
-      body = {
-        latitude: lat,
-        longitude: lng,
-        locationName: 'GPS Location',
-        isApproximated: false
-      };
+      body = { latitude: lat, longitude: lng, locationName: 'GPS Location', isApproximated: false };
     }
-
     return this.http.post(url, body, { responseType: 'text' as const }).pipe(
-      catchError(error => {
-        console.error('Record view error:', error);
-        return throwError(() => error);
-      })
+      catchError(error => throwError(() => error))
     );
   }
 
@@ -267,10 +241,8 @@ getAvailablePresets(id: number): Observable<any> {
     );
   }
 
-
   getVideoAvailability(id: number): Observable<any> {
     return this.http.get<any>(`${this.getApiUrl()}/${id}/availability`).pipe(
-
       catchError(error => {
         console.error('Get video availability error:', error);
         return throwError(() => error);
@@ -279,14 +251,11 @@ getAvailablePresets(id: number): Observable<any> {
   }
 
   getPlaybackState(id: number): Observable<any> {
-
     return this.http.get<any>(`${this.getApiUrl()}/${id}/playback-state`).pipe(
-
       catchError(error => {
         console.error('Get playback state error:', error);
         return throwError(() => error);
       })
     );
   }
-
 }

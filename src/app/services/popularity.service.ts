@@ -18,19 +18,23 @@ export interface VideoPopularityDTO {
   providedIn: 'root'
 })
 export class PopularityService {
-  private apiUrl = 'http://localhost:8082/api/popularity';
+
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    return `http://${host}:8082/api/popularity`;
+  }
 
   constructor(private http: HttpClient) {}
 
   getTopVideos(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/top-videos`);
+    return this.http.get<any>(`${this.getApiUrl()}/top-videos`);
   }
 
   runPipelineManually(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/run-pipeline`, {});
+    return this.http.post(`${this.getApiUrl()}/run-pipeline`, {});
   }
 
   healthCheck(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/health`);
+    return this.http.get(`${this.getApiUrl()}/health`);
   }
 }

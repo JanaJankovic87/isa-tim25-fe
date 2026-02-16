@@ -8,7 +8,11 @@ import { Comment, CommentPage, CommentResponse, RemainingCommentsResponse } from
 })
 export class CommentService {
   
-  private apiUrl = 'http://localhost:8082/api/videos';
+
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    return `http://${host}:8082/api/videos`;
+  }
 
   constructor(private http: HttpClient) {}
 
@@ -22,7 +26,7 @@ export class CommentService {
     }
 
     return this.http.post<CommentResponse>(
-      `${this.apiUrl}/${videoId}/comments`,
+      `${this.getApiUrl()}/${videoId}/comments`,
       body
     );
   }
@@ -34,14 +38,14 @@ export class CommentService {
       .set('_t', Date.now().toString());
     
     return this.http.get<CommentPage>(
-      `${this.apiUrl}/${videoId}/comments`,
+      `${this.getApiUrl()}/${videoId}/comments`,
       { params }
     );
   }
 
   getRemainingComments(videoId: number): Observable<RemainingCommentsResponse> {
     return this.http.get<RemainingCommentsResponse>(
-      `${this.apiUrl}/${videoId}/comments/remaining`
+      `${this.getApiUrl()}/${videoId}/comments/remaining`
     );
   }
 }

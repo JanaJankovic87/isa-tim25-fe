@@ -26,16 +26,20 @@ export interface StrategyMetrics {
   providedIn: 'root'
 })
 export class PerformanceService {
-  private apiUrl = 'http://localhost:8082/api/trending';
+
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    return `http://${host}:8082/api/trending`;
+  }
 
   constructor(private http: HttpClient) {}
 
   getMetrics(): Observable<PerformanceMetrics> {
-    return this.http.get<PerformanceMetrics>(`${this.apiUrl}/metrics`);
+    return this.http.get<PerformanceMetrics>(`${this.getApiUrl()}/metrics`);
   }
 
   resetMetrics(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/metrics/reset`, {});
+    return this.http.post<void>(`${this.getApiUrl()}/metrics/reset`, {});
   }
 
   runPerformanceTest(iterations: number, lat?: number, lng?: number): Observable<PerformanceMetrics> {
@@ -44,7 +48,7 @@ export class PerformanceService {
       params.lat = lat.toString();
       params.lng = lng.toString();
     }
-    return this.http.get<PerformanceMetrics>(`${this.apiUrl}/performance-test`, { params });
+    return this.http.get<PerformanceMetrics>(`${this.getApiUrl()}/performance-test`, { params });
   }
 
   testStrategy(strategy: string, lat?: number, lng?: number): Observable<any> {
@@ -53,6 +57,6 @@ export class PerformanceService {
       params.lat = lat.toString();
       params.lng = lng.toString();
     }
-    return this.http.get(`${this.apiUrl}/test-strategy`, { params });
+    return this.http.get(`${this.getApiUrl()}/test-strategy`, { params });
   }
 }

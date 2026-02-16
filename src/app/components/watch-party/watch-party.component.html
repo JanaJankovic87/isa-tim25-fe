@@ -32,7 +32,7 @@
           <h3>Pridruži se Watch Party-ju</h3>
           <p>Unesite ID sobe koju ste dobili od prijatelja.</p>
           <div class="input-group">
-            <input type="text" [(ngModel)]="joinRoomId" placeholder="npr. WP-ABC123" class="room-input" (keyup.enter)="joinRoom()" />
+            <input type="text" [(ngModel)]="joinRoomId" placeholder="npr. 21cc9901-a760-4e8f-ad88-9d963fa60311" class="room-input" (keyup.enter)="joinRoom()" />
             <button class="primary-btn" (click)="joinRoom()" [disabled]="isLoading || !joinRoomId.trim()">Pridruži se</button>
           </div>
         </div>
@@ -50,11 +50,6 @@
         </div>
         <div class="room-actions">
           <button *ngIf="isOwner" class="copy-btn" (click)="copyLink()">Kopiraj link</button>
-        
-          <div *ngIf="isOwner && roomId" class="share-link-box" style="margin-top:8px; padding:8px; background:#f5f5f5; border-radius:6px; font-size:12px; word-break:break-all;">
-            <strong>Link:</strong>
-            <a [href]="getShareLink()" target="_blank" rel="noreferrer">{{ getShareLink() }}</a>
-          </div>
           <button class="leave-btn" (click)="leaveRoom()">Napusti</button>
         </div>
       </div>

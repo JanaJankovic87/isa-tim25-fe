@@ -8,7 +8,9 @@ import { Comment, CommentPage, CommentResponse, RemainingCommentsResponse } from
 })
 export class CommentService {
   
-  private apiUrl = 'http://localhost:8082/api/videos';
+  private get apiUrl(): string {
+  return `http://${window.location.hostname}:8082/api/videos`;
+}
 
   constructor(private http: HttpClient) {}
 

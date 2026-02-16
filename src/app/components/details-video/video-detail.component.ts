@@ -144,7 +144,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       };
 
       if (this.videoId) {
-        const url = `http://localhost:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
+        const host = window.location.hostname;
+        const url = `http://${host}:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
@@ -333,13 +334,14 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       return '';
     }
 
+    const host = window.location.hostname;
     if (!this.presetsChecked || this.selectedQuality === 'original') {
-      const url = `http://localhost:8082/api/videos/${this.videoId}/video`;
+      const url = `http://${host}:8082/api/videos/${this.videoId}/video`;
       console.log('getVideoUrl: returning', url);
       return url;
     }
   
-    const url = `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    const url = `http://${host}:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
     console.log('getVideoUrl: returning quality', this.selectedQuality, url);
     return url;
   }

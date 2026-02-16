@@ -65,6 +65,9 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   playbackState: any = null;
   showStreamRoom: boolean = false; // whether to show the live/room UI
   hasRedirectedOnEnd: boolean = false;
+
+  hasJoinedLive: boolean = false;
+  shouldAutoSyncOnJoin: boolean = false;
   countdownInterval: any = null;
   playbackSyncInterval: any = null;
   countdownText: string = '';
@@ -639,6 +642,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           const wasShowing = this.showStreamRoom;
           this.showStreamRoom = true;
           if (!wasShowing) {
+            this.hasJoinedLive = true;
+            this.shouldAutoSyncOnJoin = true;
             setTimeout(() => this.ensurePlayerAtCurrentSecond(true), 120);
             setTimeout(() => this.ensurePlayerAtCurrentSecond(true), 600);
           }
@@ -647,18 +652,21 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.videoPlayer?.nativeElement && state.isLive && !state.hasEnded) {
           const video = this.videoPlayer.nativeElement;
           const targetTime = state.currentSecond;
-          
+
           console.log('Syncing: current time =', video.currentTime, 'target time =', targetTime, 'paused =', video.paused);
-          
-          if (Math.abs(video.currentTime - targetTime) > 2) {
-            console.log('Seeking to sync position:', targetTime);
-            video.currentTime = targetTime;
+
+          if (this.shouldAutoSyncOnJoin && Math.abs(video.currentTime - targetTime) > 2) {
+            console.log('Auto-seeking to sync position (join):', targetTime);
+            try { video.currentTime = targetTime; } catch (e) { /* ignore */ }
+            this.shouldAutoSyncOnJoin = false;
           }
 
         }
 
         if (state.hasEnded) {
           this.showStreamRoom = false;
+          this.hasJoinedLive = false;
+          this.shouldAutoSyncOnJoin = false;
           if (!this.hasRedirectedOnEnd && this.videoId) {
             this.hasRedirectedOnEnd = true;
             // navigate to same details route to refresh UI
@@ -683,6 +691,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       const tolerance = 0.5;
       if (Math.abs(el.currentTime - this.currentSecond) > tolerance) {
         el.currentTime = this.currentSecond;
+        this.shouldAutoSyncOnJoin = false;
       }
 
       if (autoPlay) {
@@ -782,6 +791,8 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   leaveStreamRoom(): void {
     if (this.videoId) {
       this.showStreamRoom = false;
+      this.hasJoinedLive = false;
+      this.shouldAutoSyncOnJoin = false;
       this.router.navigate(['/video', this.videoId]);
     }
   }

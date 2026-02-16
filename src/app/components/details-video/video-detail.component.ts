@@ -109,7 +109,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       };
 
       if (this.videoId) {
-        const url = `http://localhost:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
+        const url = `http://${window.location.hostname}:8082/api/videos/${this.videoId}?nocache=${Date.now()}`;
         const headers = new HttpHeaders({ 'Cache-Control': 'no-cache' });
         this.http.get<any>(url, { headers }).subscribe({
           next: (data) => {
@@ -280,14 +280,14 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getVideoUrl(): string {
     if (!this.videoId) return '';
-
     if (!this.presetsChecked) return '';
     
+    const base = `http://${window.location.hostname}:8082/api/videos`;
+    
     if (this.selectedQuality === 'original') {
-      return `http://localhost:8082/api/videos/${this.videoId}/video`;
+      return `${base}/${this.videoId}/video`;
     }
-  
-    return `http://localhost:8082/api/videos/${this.videoId}/video/${this.selectedQuality}`;
+    return `${base}/${this.videoId}/video/${this.selectedQuality}`;
   }
 
   getQualityLabel(): string {
@@ -297,7 +297,7 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.selectedQuality;
   }
 
-  // Promena kvaliteta videa
+ 
   onQualityChange(quality: string): void {
     if (this.selectedQuality === quality) return;
  
@@ -428,18 +428,13 @@ export class VideoDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     
-    this.http.get<any>(`http://localhost:8082/api/users/${this.video.userId}/profile`)
+    this.http.get<any>(`http://${window.location.hostname}:8082/api/users/${this.video.userId}/profile`)
       .subscribe({
         next: (data) => {
-          this.videoAuthor = {
-            firstName: data.firstName,
-            lastName: data.lastName
-          };
+          this.videoAuthor = { firstName: data.firstName, lastName: data.lastName };
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          console.error('Error loading video author:', err);
-        }
+        error: (err) => console.error('Error loading video author:', err)
       });
   }
 

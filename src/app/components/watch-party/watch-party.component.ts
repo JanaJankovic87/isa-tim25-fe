@@ -8,6 +8,7 @@ import { WatchPartyService, WatchPartyCommand } from '../../services/watch-party
 import { VideoService } from '../../services/video.service';
 import { AuthService } from '../../services/auth.service';
 import { Video } from '../../models/video.model';
+
 @Component({
   selector: 'app-watch-party',
   standalone: true,
@@ -16,31 +17,27 @@ import { Video } from '../../models/video.model';
   styleUrls: ['./watch-party.component.css']
 })
 export class WatchPartyComponent implements OnInit, OnDestroy {
- 
+
   roomId: string = '';
   joinRoomId: string = '';
   isConnected: boolean = false;
   isOwner: boolean = false;
-  
- 
+
   messages: string[] = [];
-  
-  
+
   videos: Video[] = [];
   selectedVideoId: number | null | undefined = null;
-  memberCount: number = 0;
   searchTerm: string = '';
-  
 
   currentUserId: string = '';
   currentUsername: string = '';
-  
-  
+
   showCreateMode: boolean = true;
   isLoading: boolean = false;
   error: string = '';
   
-  
+  private isRedirecting: boolean = false;
+
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -65,62 +62,48 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
 
     this.loadVideos();
 
+    // Slušaj poruke
     this.subscriptions.push(
       this.watchPartyService.messages$.subscribe((msg: string) => {
-        this.messages.push(msg);
-        
-        try {
-          const text = String(msg).toLowerCase();
-          if (this.isOwner && (text.includes('se pridru�io') || text.includes('joined'))) {
-            this.ngZone.run(() => {
-              this.memberCount = this.memberCount + 1;
-              this.cdr.detectChanges();
-            });
-          }
-          if (this.isOwner && (text.includes('napustio') || text.includes('left'))) {
-            this.ngZone.run(() => {
-              this.memberCount = Math.max(0, this.memberCount - 1);
-              this.cdr.detectChanges();
-            });
-          }
-        } catch (e) {
-        }
-        this.scrollToBottom();
+        this.ngZone.run(() => {
+          this.messages.push(msg);
+          this.cdr.detectChanges();
+          this.scrollToBottom();
+        });
       })
     );
 
+    // Slušaj komande (opciono - za debug)
     this.subscriptions.push(
       this.watchPartyService.commands$.subscribe((cmd: WatchPartyCommand) => {
-        if (cmd.action === 'play' && cmd.videoId) {
-          this.messages.push(` Video ${cmd.videoId} je pokrenut!`);
-        }
+        console.log('[Component] Command received:', cmd);
       })
     );
 
+   
     this.subscriptions.push(
       this.watchPartyService.connectionStatus$.subscribe((status: boolean) => {
         this.ngZone.run(() => {
           this.isConnected = status;
-          console.log('Connection status changed:', status);
           this.cdr.detectChanges();
         });
       })
     );
 
+    
+    this.route.params.subscribe(params => {
+      if (params['roomId']) {
+        this.joinRoomId = params['roomId'];
+        this.showCreateMode = false;
+        setTimeout(() => this.joinRoom(), 300);
+      }
+    });
+
     this.route.queryParams.subscribe(params => {
-      if (params['room']) {
+      if (params['room'] && !this.roomId) {
         this.joinRoomId = params['room'];
         this.showCreateMode = false;
-        
-        
-        console.log('[WatchParty] Auto-joining room from URL:', params['room']);
-        setTimeout(() => {
-          if (!this.isConnected && this.joinRoomId) {
-            this.joinRoom();
-          }
-        }, 500);
-      } else {
-        this.resetView();
+        setTimeout(() => this.joinRoom(), 300);
       }
     });
   }
@@ -132,7 +115,6 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     this.isOwner = false;
     this.messages = [];
     this.selectedVideoId = null;
-    this.memberCount = 0;
     this.isLoading = false;
     this.error = '';
     this.showCreateMode = true;
@@ -141,14 +123,15 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+
     try { this.watchPartyService.disconnect(); } catch (e) {}
   }
-
 
   loadVideos(): void {
     this.videoService.getVideos().subscribe({
       next: (videos) => {
         this.videos = videos;
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Error loading videos:', err);
@@ -162,34 +145,37 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
     return this.videos.filter(v => (v.title || '').toLowerCase().includes(q));
   }
 
- 
   createRoom(): void {
     this.isLoading = true;
     this.error = '';
 
-   
     const backendUrl = this.watchPartyService.getBackendUrl();
     const token = this.authService.getToken();
-    console.log('[WatchParty] createRoom - accessToken:', token);
+
+  
+    console.log('[WatchParty Component] Creating room. Token exists:', !!token);
+    console.log('[WatchParty Component] Token preview:', token ? token.substring(0, 50) : 'null');
 
     this.http.post(
       `${backendUrl}/api/watch-party/rooms`,
       {},
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }
     ).subscribe({
       next: (room: any) => {
-        // prefer backend-provided roomId
-        this.roomId = (room && (room.roomId || room.id)) ? (room.roomId || room.id) : this.watchPartyService.generateRoomId();
+        const newRoomId = room?.roomId || room?.id || this.watchPartyService.generateRoomId();
 
-        // Now connect as owner over WebSocket
-        this.watchPartyService.connect(this.roomId, this.currentUserId, true)
+        // WebSocket konekcija kao vlasnik
+        this.watchPartyService.connect(newRoomId, this.currentUserId, true)
           .then(() => {
             this.ngZone.run(() => {
+              this.roomId = newRoomId;
               this.isOwner = true;
               this.isConnected = true;
-              this.messages.push(` Soba "${this.roomId}" je kreirana!`);
-              this.messages.push(` Link za deljenje: ${window.location.origin}/watch-party?room=${this.roomId}`);
               this.isLoading = false;
+              
+              const shareLink = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/watch-party?room=${this.roomId}`;
+              this.messages.push(`Soba "${this.roomId}" je kreirana!`);
+              this.messages.push(`Link za deljenje: ${shareLink}`);
               this.cdr.detectChanges();
             });
           })
@@ -197,118 +183,134 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
             this.ngZone.run(() => {
               this.error = 'Greška pri konekciji na WebSocket.';
               this.isLoading = false;
-              console.error('WebSocket connect error after room create:', err);
+              console.error('[WatchParty] WebSocket connect error:', err);
               this.cdr.detectChanges();
             });
           });
       },
       error: (err: any) => {
         this.ngZone.run(() => {
-          this.error = 'Greška pri kreiranju sobe.';
+          this.error = 'Greška pri kreiranju sobe. Proverite da ste ulogovani.';
           this.isLoading = false;
-          console.error('Room creation REST error:', err);
+          console.error('[WatchParty] Room creation error:', err);
           this.cdr.detectChanges();
         });
       }
     });
   }
 
- 
   joinRoom(): void {
-    if (!this.joinRoomId.trim()) {
+    const trimmedId = this.joinRoomId.trim();
+    if (!trimmedId) {
       this.error = 'Unesite ID sobe';
       return;
     }
 
     this.isLoading = true;
     this.error = '';
-    this.roomId = this.joinRoomId.trim();
 
-    this.watchPartyService.connect(this.roomId, this.currentUserId, false)
+   
+    this.watchPartyService.connect(trimmedId, this.currentUserId, false)
       .then(() => {
         this.ngZone.run(() => {
+          this.roomId = trimmedId;
           this.isOwner = false;
           this.isConnected = true;
-          this.messages.push(`Pridruzili ste se sobi "${this.roomId}"`);
-          this.messages.push(`Cekanje da vlasnik pokrene video`);
           this.isLoading = false;
-          console.log('Joined room successfully');
+          this.messages.push(`Pridružili ste se sobi "${this.roomId}"`);
+          this.messages.push(`Čekanje da vlasnik pokrene video...`);
           this.cdr.detectChanges();
         });
       })
       .catch((err: any) => {
         this.ngZone.run(() => {
-          this.error = 'Greska pri pridruzivanju sobi. Proverite ID i pokusajte ponovo.';
+          this.error = 'Greška pri pridruživanju sobi. Proverite ID i pokušajte ponovo.';
           this.isLoading = false;
-          console.error('Join room error:', err);
+          console.error('[WatchParty] Join room error:', err);
           this.cdr.detectChanges();
         });
       });
   }
 
- 
   playVideo(): void {
     if (this.selectedVideoId == null) {
       this.error = 'Izaberite video za pokretanje';
       return;
     }
-
     if (!this.isOwner) {
       this.error = 'Samo vlasnik sobe može pokrenuti video';
       return;
     }
+
     const videoId = this.selectedVideoId!;
-    this.watchPartyService.playVideo(videoId);
-    this.messages.push(`Pokrenuli ste video #${videoId} za sve članove`);
-
-    try {
-      this.router.navigate(['/video', videoId]);
-    } catch (e) {}
-
-    setTimeout(() => {
-      this.watchPartyService.disconnect();
-      this.roomId = '';
-      this.joinRoomId = '';
-      this.isOwner = false;
-      this.messages = [];
-      this.selectedVideoId = null;
-      this.memberCount = 0;
-    }, 200);
-  }
-
   
+    this.watchPartyService.playVideo(videoId);
+    this.messages.push(`Pokretanje videa #${videoId} za sve članove...`);
+
+    
+    this.isRedirecting = true;
+    
+    setTimeout(() => {
+      this.router.navigate(['/video', videoId]);
+    }, 3000);
+  }
+
   leaveRoom(): void {
-    this.watchPartyService.disconnect();
-    const prevRoom = this.roomId;
-    this.watchPartyService.disconnect();
+    
+    this.watchPartyService.forceDisconnect();
     this.resetView();
-    this.showCreateMode = true;
-   
-    try {
-      if (prevRoom) {
-        localStorage.removeItem(`wp_owner_${prevRoom}`);
-      }
-      localStorage.removeItem('wp_last_room');
-    } catch (e) {}
- 
-    try { this.router.navigate(['/watch-party']); } catch (e) {}
+    this.router.navigate(['/watch-party']);
   }
 
- 
   copyLink(): void {
-    const link = `${window.location.origin}/watch-party/${this.roomId}`;
-    navigator.clipboard.writeText(link).then(() => {
-      this.messages.push('Link kopiran u clipboard!');
-    }).catch((err: any) => {
-      console.error('Failed to copy:', err);
-    });
+    
+      const link = this.getShareLink();
+
+     
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(link).then(() => {
+          this.messages.push(` Link kopiran: ${link}`);
+          try { this.cdr.detectChanges(); } catch(e) {}
+        }).catch(() => {
+          this.fallbackCopy(link);
+        });
+      } else {
+       
+        this.fallbackCopy(link);
+      }
   }
 
- 
+    private fallbackCopy(text: string): void {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        if (ok) {
+          this.messages.push(` Link kopiran: ${text}`);
+        } else {
+          this.messages.push(` Kopiraj link ručno: ${text}`);
+        }
+        document.body.removeChild(textarea);
+      } catch (e) {
+        this.messages.push(` Kopiraj link ručno: ${text}`);
+      }
+      try { this.cdr.detectChanges(); } catch(e) {}
+    }
+
+    getShareLink(): string {
+      const port = window.location.port ? `:${window.location.port}` : '';
+      return `${window.location.protocol}//${window.location.hostname}${port}/watch-party/${this.roomId}`;
+    }
+
   public goHome(): void {
     this.router.navigate(['/home']);
   }
-
 
   private scrollToBottom(): void {
     setTimeout(() => {
@@ -318,13 +320,6 @@ export class WatchPartyComponent implements OnInit, OnDestroy {
       }
     }, 100);
   }
-
-
-  toggleMode(): void {
-    this.showCreateMode = !this.showCreateMode;
-    this.error = '';
-  }
-
 
   getThumbnailUrl(videoId?: number): string {
     if (videoId) {

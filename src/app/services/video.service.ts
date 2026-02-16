@@ -250,8 +250,7 @@ export class VideoService {
       })
     );
   }
-<<<<<<< Updated upstream
-=======
+
 
   getVideoAvailability(id: number): Observable<any> {
     return this.http.get<any>(`${this.getApiUrl()}/${id}/availability`).pipe(
@@ -270,5 +269,5 @@ export class VideoService {
       })
     );
   }
->>>>>>> Stashed changes
+
 }

@@ -21,10 +21,11 @@ export interface TrendingResult {
   providedIn: 'root'
 })
 export class LocalTrendingService {
-  
-  private get apiUrl(): string {
-  return `http://${window.location.hostname}:8082/api/trending`;
-}
+
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    return `http://${host}:8082/api/trending`;
+  }
 
   constructor(private http: HttpClient) {}
 
@@ -44,7 +45,7 @@ export class LocalTrendingService {
             
             console.log('✓ User location obtained:', params);
             
-            this.http.get<TrendingResult>(`${this.apiUrl}/local`, { params })
+            this.http.get<TrendingResult>(`${this.getApiUrl()}/local`, { params })
               .subscribe({
                 next: (result) => {
                   console.log('Local trending result:', result);
@@ -67,7 +68,7 @@ export class LocalTrendingService {
               limit: limit.toString() 
             };
             
-            this.http.get<TrendingResult>(`${this.apiUrl}/local`, { params })
+            this.http.get<TrendingResult>(`${this.getApiUrl()}/local`, { params })
               .subscribe({
                 next: (result) => {
                   console.log('Local trending result (IP-based):', result);
@@ -94,7 +95,7 @@ export class LocalTrendingService {
           limit: limit.toString() 
         };
         
-        this.http.get<TrendingResult>(`${this.apiUrl}/local`, { params })
+        this.http.get<TrendingResult>(`${this.getApiUrl()}/local`, { params })
           .subscribe({
             next: (result) => {
               console.log('Local trending result (no geolocation):', result);
@@ -114,13 +115,13 @@ export class LocalTrendingService {
   // Dobavi performance metrics
 
   getMetrics(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/metrics`);
+    return this.http.get(`${this.getApiUrl()}/metrics`);
   }
 
   
   //Reset metrics (za testiranje)
    
   resetMetrics(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/metrics/reset`, {});
+    return this.http.post<void>(`${this.getApiUrl()}/metrics/reset`, {});
   }
 }

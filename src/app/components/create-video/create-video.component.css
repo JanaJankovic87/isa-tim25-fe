@@ -267,7 +267,8 @@
   .btn-submit {
     width: 100%;
   }
-  /* Location field styles */
+}
+
 .location-input-wrapper {
   display: flex;
   gap: 8px;
@@ -280,7 +281,7 @@
 
 .btn-gps-location {
   padding: 8px 16px;
-  background-color: #4CAF50;
+  background-color: #569a59;
   color: white;
   border: none;
   border-radius: 6px;
@@ -341,4 +342,307 @@
   color: #6c757d;
   font-style: italic;
 }
+
+.schedule-option-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.schedule-option-card:hover {
+  border-color: #d1708f;
+  box-shadow: 0 4px 12px rgba(209, 112, 143, 0.15);
+  transform: translateY(-2px);
+}
+
+.schedule-option-card.selected {
+  border-color: #d1708f;
+  background: linear-gradient(135deg, #fef5f8 0%, #ffffff 100%);
+  box-shadow: 0 4px 16px rgba(209, 112, 143, 0.2);
+}
+
+.schedule-option-card.selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #d1708f 0%, #c95d84 100%);
+}
+
+.schedule-option-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.schedule-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.schedule-text {
+  flex: 1;
+}
+
+.schedule-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.schedule-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.schedule-option-card.selected .schedule-text p {
+  color: #d1708f;
+  font-weight: 500;
+}
+
+.schedule-checkbox {
+  flex-shrink: 0;
+}
+
+.schedule-checkbox input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  accent-color: #d1708f;
+}
+
+.validation-error {
+  color: #ff4444;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px; 
+  box-sizing: border-box;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  color: #666;
+}
+
+.dialog-close:hover {
+  background-color: #f0f0f0;
+}
+
+.dialog-body {
+  padding: 24px;
+}
+
+.dialog-info {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f1f8ff 100%);
+  border-left: 4px solid #2196f3;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #1565c0;
+  line-height: 1.5;
+}
+
+.datetime-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative; /* allow absolute positioning of the calendar icon */
+}
+
+.datetime-input-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #492f44;
+}
+
+.datetime-input-group input[type="datetime-local"] {
+  padding: 12px 16px;
+  padding-right: 46px; /* leave space for native calendar icon */
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background-color: white;
+  transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.datetime-input-group input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: #d1708f;
+  box-shadow: 0 0 0 4px rgba(209, 112, 143, 0.1);
+}
+
+.datetime-input-group input[type="datetime-local"]:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.datetime-input-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 14px;
+  top: 65%; 
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #333;
+  opacity: 0.95;
+}
+
+/* Firefox uses a different pseudo-element */
+.datetime-input-group input[type="datetime-local"]::-moz-focus-inner {
+  border: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-dialog-cancel {
+  background: white;
+  border: 2px solid #e0e0e0;
+  color: #666;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-dialog-cancel:hover {
+  border-color: #ccc;
+  background-color: #f5f5f5;
+}
+
+.btn-dialog-confirm {
+  background: linear-gradient(135deg, #d1708f 0%, #c95d84 100%);
+  border: none;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(209, 112, 143, 0.3);
+}
+
+.btn-dialog-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c95d84 0%, #b8507a 100%);
+  box-shadow: 0 4px 12px rgba(209, 112, 143, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-dialog-confirm:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .schedule-option-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schedule-checkbox {
+    align-self: flex-end;
+  }
+
+  .dialog-content {
+    width: 95%;
+  }
 }
